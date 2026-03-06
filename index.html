@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz — Presentations</title>
+    <meta name="description" content="Slide presentations archive by Jazz Lien. Projects, talks, and visual documentation.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ═══════════════════════════════════════════
+           CUSTOM PROPERTIES
+           ═══════════════════════════════════════════ */
+        :root {
+            --bg: #050a12;
+            --bg-card: rgba(10, 18, 32, 0.65);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(0, 212, 255, 0.5);
+            --accent: #00d4ff;
+            --accent-dim: rgba(0, 212, 255, 0.12);
+            --accent-glow: rgba(0, 212, 255, 0.15);
+            --text: #e8edf5;
+            --text-secondary: #6b7a90;
+            --text-muted: #3a4a60;
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* ═══════════════════════════════════════════
+           RESET
+           ═══════════════════════════════════════════ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        ::selection {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        /* ═══════════════════════════════════════════
+           BODY & DOT MATRIX OVERLAY
+           ═══════════════════════════════════════════ */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Faint horizontal scan line drift */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.4;
+        }
+
+        @keyframes scanline {
+            0% { top: -2px; }
+            100% { top: 100vh; }
+        }
+
+        /* ═══════════════════════════════════════════
+           LAYOUT SHELL
+           ═══════════════════════════════════════════ */
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ═══════════════════════════════════════════
+           HEADER
+           ═══════════════════════════════════════════ */
+        header {
+            padding: 64px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 48px;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .site-id {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .site-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            letter-spacing: -0.03em;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .site-title span {
+            color: var(--accent);
+        }
+
+        .site-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        /* Signal indicator */
+        .signal {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding-bottom: 4px;
+        }
+
+        .signal-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.3; box-shadow: none; }
+            50% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+        }
+
+        /* ═══════════════════════════════════════════
+           SEARCH / COMMAND BAR
+           ═══════════════════════════════════════════ */
+        .cmd-bar {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .cmd-bar::before {
+            content: '>';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 500;
+            pointer-events: none;
+        }
+
+        .cmd-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 14px 16px 14px 36px;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cmd-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .cmd-input:focus {
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        /* ═══════════════════════════════════════════
+           MASONRY GRID
+           ═══════════════════════════════════════════ */
+        .masonry {
+            column-count: 3;
+            column-gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .masonry { column-count: 2; }
+        }
+
+        @media (max-width: 560px) {
+            .masonry { column-count: 1; }
+        }
+
+        /* ═══════════════════════════════════════════
+           CARD
+           ═══════════════════════════════════════════ */
+        .card {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: crosshair;
+            transition:
+                transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-hover);
+            box-shadow:
+                0 0 20px var(--accent-glow),
+                0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .card:hover .card-index {
+            color: var(--accent);
+        }
+
+        .card:hover .card-title {
+            color: var(--accent);
+        }
+
+        /* Card with thumbnail */
+        .card-thumb {
+            width: 100%;
+            display: block;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Card typographic placeholder (no thumbnail) */
+        .card-typo {
+            padding: 48px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-typo::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 212, 255, 0.03), transparent 50%);
+        }
+
+        .card-typo-text {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2rem, 5vw, 3rem);
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            color: rgba(255, 255, 255, 0.08);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            user-select: none;
+        }
+
+        /* Card body */
+        .card-body {
+            padding: 18px 20px 20px;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .card-tag {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .card-index {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            transition: color 0.3s ease;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            line-height: 1.25;
+            color: var(--text);
+            margin-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .card-desc {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 300;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* ═══════════════════════════════════════════
+           EMPTY STATE
+           ═══════════════════════════════════════════ */
+        .empty-state {
+            display: none;
+            text-align: center;
+            padding: 120px 24px;
+        }
+
+        .empty-state.visible {
+            display: block;
+        }
+
+        .empty-state p {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .empty-state .empty-glyph {
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+            opacity: 0.2;
+            color: var(--text);
+        }
+
+        /* ═══════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════ */
+        footer {
+            margin-top: 80px;
+            padding: 32px 0;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        footer p {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent);
+        }
+
+        /* ═══════════════════════════════════════════
+           ENTRANCE ANIMATIONS
+           ═══════════════════════════════════════════ */
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            animation: fade-up 0.6s ease-out both;
+        }
+
+        .cmd-bar {
+            animation: fade-up 0.6s ease-out 0.1s both;
+        }
+
+        .card {
+            animation: fade-up 0.5s ease-out both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.15s; }
+        .card:nth-child(2) { animation-delay: 0.25s; }
+        .card:nth-child(3) { animation-delay: 0.35s; }
+        .card:nth-child(4) { animation-delay: 0.45s; }
+        .card:nth-child(5) { animation-delay: 0.55s; }
+        .card:nth-child(6) { animation-delay: 0.65s; }
+
+        footer {
+            animation: fade-up 0.5s ease-out 0.4s both;
+        }
+
+        /* ═══════════════════════════════════════════
+           SCROLLBAR
+           ═══════════════════════════════════════════ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <header>
+        <div class="header-row">
+            <div class="site-id">
+                <h1 class="site-title">Presentation<span>s</span></h1>
+                <p class="site-subtitle">Archive &mdash; Jazz Lien</p>
+            </div>
+            <div class="signal">
+                <span class="signal-dot"></span>
+                <span id="count">1 entry</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Command/Search Bar -->
+    <div class="cmd-bar">
+        <input
+            type="text"
+            class="cmd-input"
+            id="search"
+            placeholder="filter by title or tag..."
+            autocomplete="off"
+            spellcheck="false"
+        >
+    </div>
+
+    <!-- Masonry Grid -->
+    <div class="masonry" id="grid">
+
+        <a class="card" href="podsight.html" data-title="podsight" data-tag="product 2026">
+            <div class="card-typo">
+                <div class="card-typo-text">Pod<br>Sight</div>
+            </div>
+            <div class="card-body">
+                <div class="card-meta">
+                    <span class="card-tag">Product &middot; 2026</span>
+                    <span class="card-index">001</span>
+                </div>
+                <h2 class="card-title">PodSight</h2>
+                <p class="card-desc">AI-powered podcast summarization pipeline. Transcribe, summarize, and publish&mdash;fully automated.</p>
+            </div>
+        </a>
+
+        <!-- ═══ ADD NEW CARDS HERE ═══
+        <a class="card" href="your-file.html" data-title="title" data-tag="tag year">
+            <div class="card-typo">
+                <div class="card-typo-text">Title<br>Here</div>
+            </div>
+            <div class="card-body">
+                <div class="card-meta">
+                    <span class="card-tag">Tag &middot; Year</span>
+                    <span class="card-index">002</span>
+                </div>
+                <h2 class="card-title">Title</h2>
+                <p class="card-desc">Description goes here.</p>
+            </div>
+        </a>
+        ═══════════════════════════ -->
+
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty">
+        <div class="empty-glyph">&mdash;</div>
+        <p>nothing here yet.</p>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Jazz Lien</p>
+        <p><a href="https://jazzlien.com">jazzlien.com</a></p>
+    </footer>
+</div>
+
+<script>
+    const search = document.getElementById('search');
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('empty');
+    const countEl = document.getElementById('count');
+    const cards = Array.from(grid.querySelectorAll('.card'));
+
+    search.addEventListener('input', () => {
+        const q = search.value.toLowerCase().trim();
+        let visible = 0;
+
+        cards.forEach(card => {
+            const title = card.dataset.title || '';
+            const tag = card.dataset.tag || '';
+            const match = !q || title.includes(q) || tag.includes(q);
+            card.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+
+        empty.classList.toggle('visible', visible === 0);
+        countEl.textContent = visible === 1 ? '1 entry' : `${visible} entries`;
+    });
+</script>
+
+</body>
+</html>
