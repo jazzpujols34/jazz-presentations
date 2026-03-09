@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Manager — Jazz Lien</title>
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #f59e0b;
+  --primary-dim: rgba(245, 158, 11, 0.15);
+  --secondary: #ef4444;
+  --secondary-dim: rgba(239, 68, 68, 0.12);
+  --tertiary: #22d3ee;
+  --tertiary-dim: rgba(34, 211, 238, 0.10);
+  --bg: #0a0a0f;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
+  --text: #e8e8ed;
+  --text-dim: #8a8a9a;
+  --border: rgba(255,255,255,0.08);
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+  --slide-pad: clamp(1.5rem, 4vw, 4rem);
+}
+
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; overflow-x: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.5; }
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 200px;
+  opacity: 0.5;
+}
+
+/* Slides */
+.slide {
+  height: 100vh; width: 100%; scroll-snap-align: start;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: var(--slide-pad);
+}
+
+/* Glow orbs */
+.glow {
+  position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.25;
+}
+.glow-amber { background: var(--primary); width: 400px; height: 400px; }
+.glow-red { background: var(--secondary); width: 350px; height: 350px; }
+.glow-cyan { background: var(--tertiary); width: 300px; height: 300px; }
+
+/* Typography */
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.2rem, 5vw, 4.5rem); line-height: 1.1; letter-spacing: -0.02em; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 3.5vw, 3rem); line-height: 1.15; letter-spacing: -0.01em; margin-bottom: clamp(0.75rem, 2vh, 1.5rem); }
+h3 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1rem, 1.8vw, 1.35rem); line-height: 1.25; }
+p, li { font-size: clamp(0.85rem, 1.4vw, 1.1rem); color: var(--text-dim); }
+.subtitle { font-size: clamp(0.95rem, 1.6vw, 1.25rem); color: var(--text-dim); max-width: 640px; margin-top: clamp(0.5rem, 1.5vh, 1rem); }
+.label { font-size: clamp(0.65rem, 0.9vw, 0.8rem); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* Accent colors */
+.accent-amber { color: var(--primary); }
+.accent-red { color: var(--secondary); }
+.accent-cyan { color: var(--tertiary); }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.75rem; border-radius: 999px;
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.badge-amber { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(245,158,11,0.2); }
+.badge-red { background: var(--secondary-dim); color: var(--secondary); border: 1px solid rgba(239,68,68,0.15); }
+
+/* Card grid */
+.card-grid {
+  display: grid; gap: clamp(0.6rem, 1.2vw, 1rem);
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: clamp(0.75rem, 2vh, 1.5rem);
+}
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: clamp(0.8rem, 1.5vw, 1.25rem);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+.card:hover { background: var(--bg-card-hover); border-color: rgba(245,158,11,0.2); transform: translateY(-2px); }
+.card .icon-wrap {
+  width: clamp(28px, 3vw, 40px); height: clamp(28px, 3vw, 40px);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  margin-bottom: clamp(0.4rem, 0.8vh, 0.75rem);
+}
+.card .icon-wrap svg { width: 60%; height: 60%; }
+.card h3 { margin-bottom: 0.25rem; }
+.card p { font-size: clamp(0.72rem, 1.1vw, 0.88rem); line-height: 1.4; }
+
+/* Framework boxes */
+.framework-grid {
+  display: grid; gap: clamp(0.5rem, 1vw, 0.75rem);
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: clamp(0.75rem, 2vh, 1.25rem);
+}
+.fw-box {
+  border-radius: 14px; padding: clamp(0.8rem, 1.5vw, 1.25rem);
+  border: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.fw-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.fw-anchor { background: rgba(245,158,11,0.06); }
+.fw-anchor::before { background: var(--primary); }
+.fw-flow { background: rgba(239,68,68,0.05); }
+.fw-flow::before { background: var(--secondary); }
+.fw-moon { background: rgba(34,211,238,0.04); }
+.fw-moon::before { background: var(--tertiary); }
+.fw-box .fw-pct { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 2.5vw, 2.2rem); line-height: 1; }
+.fw-box .fw-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(0.95rem, 1.5vw, 1.15rem); margin-top: 0.15rem; }
+.fw-box ul { list-style: none; margin-top: clamp(0.3rem, 0.6vh, 0.5rem); }
+.fw-box li { font-size: clamp(0.7rem, 1vw, 0.85rem); color: var(--text-dim); padding: 0.15rem 0; display: flex; align-items: flex-start; gap: 0.35rem; }
+.fw-box li svg { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; }
+.fw-rule { font-size: clamp(0.65rem, 0.9vw, 0.78rem); color: var(--text-dim); margin-top: clamp(0.5rem, 1vh, 0.75rem); padding-top: clamp(0.4rem, 0.8vh, 0.6rem); border-top: 1px solid var(--border); }
+
+/* Bullet list */
+.bullet-list { list-style: none; margin-top: clamp(0.5rem, 1vh, 0.75rem); }
+.bullet-list li {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  padding: clamp(0.35rem, 0.7vh, 0.5rem) 0;
+  font-size: clamp(0.82rem, 1.3vw, 1rem);
+  color: var(--text-dim);
+}
+.bullet-list li svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; }
+
+/* Architecture diagram */
+.arch-row {
+  display: flex; gap: clamp(0.4rem, 0.8vw, 0.75rem); flex-wrap: wrap;
+  justify-content: center; margin-bottom: clamp(0.3rem, 0.6vh, 0.5rem);
+}
+.arch-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: clamp(0.5rem, 1vw, 0.75rem) clamp(0.8rem, 1.5vw, 1.25rem);
+  text-align: center; min-width: 120px; flex: 1; max-width: 200px;
+}
+.arch-box .label { display: block; margin-bottom: 0.2rem; }
+.arch-box .val { font-family: var(--font-display); font-weight: 700; font-size: clamp(0.8rem, 1.2vw, 0.95rem); color: var(--text); }
+.arch-arrow { text-align: center; color: var(--text-dim); font-size: 1.2rem; margin: clamp(0.15rem, 0.3vh, 0.25rem) 0; }
+.arch-arrow svg { width: 20px; height: 20px; }
+
+/* Pages grid */
+.pages-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(0.3rem, 0.6vw, 0.5rem);
+  margin-top: clamp(0.75rem, 1.5vh, 1.25rem);
+}
+.page-chip {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: clamp(0.35rem, 0.7vw, 0.5rem) clamp(0.5rem, 0.8vw, 0.65rem);
+  font-size: clamp(0.6rem, 0.9vw, 0.78rem); font-weight: 500;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: border-color 0.3s, background 0.3s;
+}
+.page-chip:hover { border-color: rgba(245,158,11,0.3); background: var(--bg-card-hover); }
+.page-chip.highlight { border-color: rgba(245,158,11,0.3); background: var(--primary-dim); color: var(--primary); }
+
+/* Tech pills */
+.tech-grid {
+  display: flex; flex-wrap: wrap; gap: clamp(0.3rem, 0.6vw, 0.5rem);
+  margin-top: clamp(0.5rem, 1vh, 0.75rem);
+}
+.tech-pill {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 999px; padding: clamp(0.3rem, 0.5vw, 0.4rem) clamp(0.7rem, 1.2vw, 1rem);
+  font-size: clamp(0.7rem, 1vw, 0.85rem); font-weight: 500;
+  transition: border-color 0.3s;
+}
+.tech-pill:hover { border-color: rgba(245,158,11,0.3); }
+.tech-section { margin-top: clamp(0.75rem, 1.5vh, 1.25rem); }
+.tech-section .label { margin-bottom: clamp(0.3rem, 0.5vh, 0.4rem); display: block; }
+
+/* Rules */
+.rules-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(0.5rem, 1vw, 0.75rem);
+  margin-top: clamp(0.75rem, 1.5vh, 1rem);
+}
+.rule-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: clamp(0.6rem, 1.2vw, 1rem);
+  display: flex; align-items: flex-start; gap: 0.6rem;
+}
+.rule-item svg { flex-shrink: 0; width: clamp(18px, 2vw, 22px); height: clamp(18px, 2vw, 22px); margin-top: 1px; }
+.rule-item .rule-text { font-size: clamp(0.75rem, 1.1vw, 0.9rem); color: var(--text-dim); line-height: 1.35; }
+.rule-item strong { color: var(--text); font-weight: 600; }
+
+/* Stats bar */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(0.5rem, 1vw, 1rem);
+  margin-top: clamp(1rem, 2vh, 1.5rem);
+}
+.stat-box { text-align: center; }
+.stat-num { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.8rem, 4vw, 3.5rem); line-height: 1; }
+.stat-label { font-size: clamp(0.65rem, 0.9vw, 0.8rem); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem; }
+
+/* Progress bar */
+#progress {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 1000;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  width: 0; transition: width 0.3s ease;
+}
+
+/* Nav dots */
+.nav-dots {
+  position: fixed; right: clamp(0.75rem, 1.5vw, 1.5rem); top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 0.5rem; z-index: 100;
+}
+.nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); border: none; cursor: pointer;
+  transition: background 0.3s, transform 0.3s; padding: 0;
+}
+.nav-dot.active { background: var(--primary); transform: scale(1.4); }
+.nav-dot:hover { background: rgba(245,158,11,0.5); }
+
+/* Animations */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* End slide */
+.end-line {
+  width: 60px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  margin-bottom: clamp(0.75rem, 1.5vh, 1.25rem);
+}
+
+/* Responsive: short viewports */
+@media (max-height: 700px) {
+  h1 { font-size: clamp(1.8rem, 4vw, 3rem); }
+  h2 { font-size: clamp(1.3rem, 2.8vw, 2.2rem); margin-bottom: 0.5rem; }
+  .card { padding: clamp(0.5rem, 1vw, 0.8rem); }
+  .fw-box { padding: clamp(0.5rem, 1vw, 0.8rem); }
+  .fw-box .fw-pct { font-size: clamp(1.1rem, 2vw, 1.6rem); }
+  .pages-grid { grid-template-columns: repeat(6, 1fr); gap: 0.25rem; }
+  .stats-row { gap: 0.5rem; }
+  .stat-num { font-size: clamp(1.4rem, 3vw, 2.5rem); }
+}
+@media (max-height: 600px) {
+  .slide { padding: clamp(1rem, 2vw, 1.5rem); }
+  h1 { font-size: clamp(1.5rem, 3.5vw, 2.4rem); }
+  h2 { font-size: clamp(1.1rem, 2.4vw, 1.8rem); }
+  .card-grid { gap: 0.4rem; }
+  .card h3 { font-size: clamp(0.8rem, 1.3vw, 0.95rem); }
+  .card p { font-size: clamp(0.62rem, 0.9vw, 0.75rem); }
+  .card .icon-wrap { width: 24px; height: 24px; margin-bottom: 0.3rem; }
+  .framework-grid { gap: 0.4rem; }
+  .rules-grid { gap: 0.4rem; }
+}
+@media (max-height: 500px) {
+  h1 { font-size: clamp(1.2rem, 3vw, 2rem); }
+  h2 { font-size: clamp(1rem, 2vw, 1.5rem); }
+  .subtitle { font-size: clamp(0.75rem, 1.2vw, 0.9rem); }
+  .fw-box ul { display: none; }
+  .card p { display: none; }
+}
+
+/* Responsive: arch layout collapse */
+@media (max-width: 700px) {
+  .arch-layout { grid-template-columns: 1fr !important; }
+}
+
+/* Responsive: narrow */
+@media (max-width: 768px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+  .framework-grid { grid-template-columns: 1fr; }
+  .pages-grid { grid-template-columns: repeat(3, 1fr); }
+  .rules-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .arch-row { flex-direction: column; align-items: center; }
+  .arch-box { max-width: 100%; }
+  .nav-dots { display: none; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .card { transition: none; }
+  .nav-dot { transition: none; }
+  #progress { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- Slide 1: Title -->
+<section class="slide" id="s1">
+  <div class="glow glow-amber" style="top:-15%;right:-10%;"></div>
+  <div class="glow glow-red" style="bottom:-20%;left:-5%;opacity:0.15;"></div>
+  <div class="reveal">
+    <span class="badge badge-amber">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Investment System
+    </span>
+  </div>
+  <h1 class="reveal reveal-delay-1" style="margin-top:clamp(0.5rem,1.5vh,1rem);">Portfolio<br><span class="accent-amber">Manager</span></h1>
+  <p class="subtitle reveal reveal-delay-2">Disciplined investment portfolio tracking with the Anchor & Flow framework. Real-time IBKR integration, multi-source market data, and automated audit engine.</p>
+  <div class="reveal reveal-delay-3" style="margin-top:clamp(0.75rem,1.5vh,1.25rem);display:flex;gap:0.75rem;flex-wrap:wrap;">
+    <span class="badge badge-amber">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      Real-time Sync
+    </span>
+    <span class="badge badge-red">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Rules Engine
+    </span>
+  </div>
+</section>
+
+<!-- Slide 2: Anchor & Flow Framework -->
+<section class="slide" id="s2">
+  <div class="glow glow-amber" style="top:10%;right:-15%;opacity:0.15;"></div>
+  <h2 class="reveal">The <span class="accent-amber">Anchor & Flow</span> Framework</h2>
+  <div class="framework-grid">
+    <div class="fw-box fw-anchor reveal reveal-delay-1">
+      <div class="fw-pct accent-amber">50-60%</div>
+      <div class="fw-title">Anchor</div>
+      <ul>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Stable infrastructure: NVDA, GOOGL, AMD, MU
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Long-term conviction holds
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          15% max per stock
+        </li>
+      </ul>
+    </div>
+    <div class="fw-box fw-flow reveal reveal-delay-2">
+      <div class="fw-pct accent-red">40-50%</div>
+      <div class="fw-title">Flow</div>
+      <ul>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          High-growth narrative: IREN, ASTS, LITE
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          8% hard stop loss
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+          45-day time stop
+        </li>
+      </ul>
+    </div>
+    <div class="fw-box fw-moon reveal reveal-delay-3">
+      <div class="fw-pct accent-cyan">0-5%</div>
+      <div class="fw-title">Moonshot</div>
+      <ul>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          Speculation / lottery tickets
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Minimal position size
+        </li>
+      </ul>
+    </div>
+  </div>
+  <p class="reveal reveal-delay-4" style="margin-top:clamp(0.5rem,1vh,0.75rem);font-size:clamp(0.72rem,1vw,0.85rem);color:var(--text-dim);">
+    Enforces strict position limits, theme concentration caps (25%), and market regime awareness.
+  </p>
+</section>
+
+<!-- Slide 3: Key Features -->
+<section class="slide" id="s3">
+  <div class="glow glow-red" style="top:-10%;left:-10%;opacity:0.12;"></div>
+  <h2 class="reveal">Key <span class="accent-amber">Features</span></h2>
+  <div class="card-grid">
+    <div class="card reveal reveal-delay-1">
+      <div class="icon-wrap" style="background:var(--primary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <h3>IBKR Account Sync</h3>
+      <p>Real-time positions, P&L, and cash from Interactive Brokers TWS API</p>
+    </div>
+    <div class="card reveal reveal-delay-1">
+      <div class="icon-wrap" style="background:var(--secondary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Audit Bot</h3>
+      <p>Per-stock health check: technicals, volume, trend, RSI with ENTER/HOLD/TRIM/SELL verdicts</p>
+    </div>
+    <div class="card reveal reveal-delay-2">
+      <div class="icon-wrap" style="background:var(--tertiary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h3>Trade Journal</h3>
+      <p>Record every trade with lessons learned and pattern recognition</p>
+    </div>
+    <div class="card reveal reveal-delay-2">
+      <div class="icon-wrap" style="background:var(--primary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <h3>Market Screener</h3>
+      <p>TradingView + yfinance screener for discovering new opportunities</p>
+    </div>
+    <div class="card reveal reveal-delay-3">
+      <div class="icon-wrap" style="background:var(--secondary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V10l4-6h6l4 6v10"/><path d="M9 20v-4h6v4"/></svg>
+      </div>
+      <h3>Pyramid Tracker</h3>
+      <p>Staged position building with entry levels and cost basis tracking</p>
+    </div>
+    <div class="card reveal reveal-delay-3">
+      <div class="icon-wrap" style="background:var(--tertiary-dim);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      </div>
+      <h3>Reentry Tracker</h3>
+      <p>10-day cooloff period, max 2 reentries per quarter per stock</p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 4: Dashboard & Pages -->
+<section class="slide" id="s4">
+  <div class="glow glow-cyan" style="bottom:-15%;right:-10%;opacity:0.12;"></div>
+  <h2 class="reveal"><span class="accent-amber">18</span> Specialized Pages</h2>
+  <p class="subtitle reveal reveal-delay-1">Every aspect of portfolio management has a dedicated view.</p>
+  <div class="pages-grid reveal reveal-delay-2">
+    <div class="page-chip highlight">Dashboard</div>
+    <div class="page-chip highlight">Holdings</div>
+    <div class="page-chip highlight">Actions</div>
+    <div class="page-chip">Anchor-Flow</div>
+    <div class="page-chip">Screener</div>
+    <div class="page-chip highlight">Audit</div>
+    <div class="page-chip">Batch Audit</div>
+    <div class="page-chip">Watchlist</div>
+    <div class="page-chip">Trade Log</div>
+    <div class="page-chip">Performance</div>
+    <div class="page-chip">Allocation</div>
+    <div class="page-chip">Earnings</div>
+    <div class="page-chip">Flow Health</div>
+    <div class="page-chip">Pyramid Tracker</div>
+    <div class="page-chip">Reentry Tracker</div>
+    <div class="page-chip">Weekly Review</div>
+    <div class="page-chip">One-Pager</div>
+    <div class="page-chip">System Guide</div>
+  </div>
+</section>
+
+<!-- Slide 5: Architecture -->
+<section class="slide" id="s5">
+  <div class="glow glow-amber" style="top:5%;left:-12%;opacity:0.12;"></div>
+  <h2 class="reveal">System <span class="accent-amber">Architecture</span></h2>
+  <div style="margin-top:clamp(0.5rem,1.5vh,1rem);">
+    <div class="arch-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,3vw,2.5rem);align-items:start;">
+      <!-- Left column: vertical flow diagram -->
+      <div>
+        <div class="arch-row reveal reveal-delay-1">
+          <div class="arch-box" style="border-color:rgba(245,158,11,0.2);flex:2;">
+            <span class="label accent-amber">Frontend</span>
+            <span class="val" style="display:inline-flex;align-items:center;gap:0.4rem;justify-content:center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              React 19 + Vite + Tailwind
+            </span>
+            <span style="font-size:clamp(0.6rem,0.8vw,0.72rem);color:var(--text-dim);display:block;">Cloudflare Pages :3400</span>
+          </div>
+        </div>
+        <div class="arch-arrow reveal reveal-delay-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="arch-row reveal reveal-delay-2">
+          <div class="arch-box" style="border-color:rgba(239,68,68,0.2);flex:2;">
+            <span class="label accent-red">Backend</span>
+            <span class="val" style="display:inline-flex;align-items:center;gap:0.4rem;justify-content:center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              FastAPI
+            </span>
+            <span style="font-size:clamp(0.6rem,0.8vw,0.72rem);color:var(--text-dim);display:block;">Google Cloud Run :3401</span>
+          </div>
+        </div>
+        <div class="arch-arrow reveal reveal-delay-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="arch-row reveal reveal-delay-3">
+          <div class="arch-box" style="border-color:rgba(34,211,238,0.2);">
+            <span class="label accent-cyan">Database</span>
+            <span class="val" style="display:inline-flex;align-items:center;gap:0.4rem;justify-content:center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              Turso (SQLite)
+            </span>
+            <span style="font-size:clamp(0.6rem,0.8vw,0.72rem);color:var(--text-dim);display:block;">+ local fallback</span>
+          </div>
+          <div class="arch-box" style="border-color:rgba(245,158,11,0.15);">
+            <span class="label accent-amber">Broker</span>
+            <span class="val" style="display:inline-flex;align-items:center;gap:0.4rem;justify-content:center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              IBKR TWS
+            </span>
+            <span style="font-size:clamp(0.6rem,0.8vw,0.72rem);color:var(--text-dim);display:block;">ib_async subprocess</span>
+          </div>
+          <div class="arch-box" style="border-color:rgba(239,68,68,0.15);">
+            <span class="label accent-red">Market Data</span>
+            <span class="val" style="display:inline-flex;align-items:center;gap:0.4rem;justify-content:center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              TV + yfinance
+            </span>
+            <span style="font-size:clamp(0.6rem,0.8vw,0.72rem);color:var(--text-dim);display:block;">screener + fallback</span>
+          </div>
+        </div>
+      </div>
+      <!-- Right column: architecture detail cards -->
+      <div class="reveal reveal-delay-2" style="display:flex;flex-direction:column;gap:clamp(0.5rem,1vw,0.75rem);">
+        <div style="background:var(--bg-card);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:clamp(0.6rem,1.2vw,1rem);">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(0.8rem,1.1vw,0.95rem);color:var(--primary);">Real-Time Data</span>
+          </div>
+          <p style="font-size:clamp(0.68rem,0.95vw,0.82rem);color:var(--text-dim);line-height:1.4;">IBKR TWS connection via ib_async subprocess, live portfolio sync with 5-second heartbeat</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:clamp(0.6rem,1.2vw,1rem);">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(0.8rem,1.1vw,0.95rem);color:var(--secondary);">Dual Market Support</span>
+          </div>
+          <p style="font-size:clamp(0.68rem,0.95vw,0.82rem);color:var(--text-dim);line-height:1.4;">TradingView screener for TW stocks, yfinance fallback for US market data</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:clamp(0.6rem,1.2vw,1rem);">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(0.8rem,1.1vw,0.95rem);color:var(--tertiary);">Audit Engine</span>
+          </div>
+          <p style="font-size:clamp(0.68rem,0.95vw,0.82rem);color:var(--text-dim);line-height:1.4;">10+ validation rules, automated lot matching, capital gains tracking with tax lot methods</p>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:clamp(0.6rem,1.2vw,1rem);">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(0.8rem,1.1vw,0.95rem);color:var(--primary);">Local-First</span>
+          </div>
+          <p style="font-size:clamp(0.68rem,0.95vw,0.82rem);color:var(--text-dim);line-height:1.4;">Turso SQLite with local fallback, works offline with full sync on reconnect</p>
+        </div>
+      </div>
+    </div>
+    <!-- Stats footer -->
+    <p class="reveal reveal-delay-4" style="text-align:center;margin-top:clamp(0.5rem,1vh,0.75rem);font-size:clamp(0.7rem,1vw,0.82rem);color:var(--text-dim);">
+      5 React Contexts &middot; 22 component directories &middot; 6 database tables
+    </p>
+  </div>
+</section>
+
+<!-- Slide 6: Tech Stack -->
+<section class="slide" id="s6">
+  <div class="glow glow-red" style="bottom:-10%;left:-8%;opacity:0.12;"></div>
+  <h2 class="reveal">Tech <span class="accent-amber">Stack</span></h2>
+  <div style="max-width:700px;">
+    <div class="tech-section reveal reveal-delay-1">
+      <span class="label accent-amber">Frontend</span>
+      <div class="tech-grid">
+        <span class="tech-pill">React 19</span>
+        <span class="tech-pill">TypeScript</span>
+        <span class="tech-pill">Vite</span>
+        <span class="tech-pill">Tailwind CSS 4</span>
+        <span class="tech-pill">Recharts</span>
+      </div>
+    </div>
+    <div class="tech-section reveal reveal-delay-2">
+      <span class="label accent-red">Backend</span>
+      <div class="tech-grid">
+        <span class="tech-pill">FastAPI</span>
+        <span class="tech-pill">Turso</span>
+        <span class="tech-pill">ib_async</span>
+        <span class="tech-pill">tvscreener</span>
+        <span class="tech-pill">yfinance</span>
+        <span class="tech-pill">pandas</span>
+      </div>
+    </div>
+    <div class="tech-section reveal reveal-delay-3">
+      <span class="label accent-cyan">Infrastructure</span>
+      <div class="tech-grid">
+        <span class="tech-pill">Cloudflare Pages</span>
+        <span class="tech-pill">Google Cloud Run</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 7: Rules Engine -->
+<section class="slide" id="s7">
+  <div class="glow glow-amber" style="top:-10%;right:-15%;opacity:0.15;"></div>
+  <h2 class="reveal">Rules <span class="accent-red">Engine</span></h2>
+  <p class="subtitle reveal reveal-delay-1" style="margin-bottom:clamp(0.25rem,0.5vh,0.5rem);">The discipline that keeps emotions out of trading.</p>
+  <div class="rules-grid">
+    <div class="rule-item reveal reveal-delay-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div class="rule-text"><strong>Position Limits</strong> &mdash; Single stock max 15%, single theme max 25%</div>
+    </div>
+    <div class="rule-item reveal reveal-delay-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div class="rule-text"><strong>Leverage & Cash</strong> &mdash; Max leverage 1.2x, cash buffer at least 10%</div>
+    </div>
+    <div class="rule-item reveal reveal-delay-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      <div class="rule-text"><strong>Flow Rotation</strong> &mdash; Sell 50% at +100% gain to lock profits</div>
+    </div>
+    <div class="rule-item reveal reveal-delay-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div class="rule-text"><strong>Earnings Blackout</strong> &mdash; No entry within 5 days of earnings</div>
+    </div>
+    <div class="rule-item reveal reveal-delay-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <div class="rule-text"><strong>Circuit Breakers</strong> &mdash; Yellow / Orange / Red / Full Stop thresholds</div>
+    </div>
+    <div class="rule-item reveal reveal-delay-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <div class="rule-text"><strong>Market Regime</strong> &mdash; Bull / Choppy / Correction / Bear detection</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 8: Stats -->
+<section class="slide" id="s8">
+  <div class="glow glow-cyan" style="top:10%;left:-10%;opacity:0.12;"></div>
+  <div class="glow glow-amber" style="bottom:10%;right:-10%;opacity:0.1;"></div>
+  <h2 class="reveal">By the <span class="accent-amber">Numbers</span></h2>
+  <div class="stats-row">
+    <div class="stat-box reveal reveal-delay-1">
+      <div class="stat-num accent-amber">18</div>
+      <div class="stat-label">Specialized Pages</div>
+    </div>
+    <div class="stat-box reveal reveal-delay-2">
+      <div class="stat-num accent-red">40+</div>
+      <div class="stat-label">API Endpoints</div>
+    </div>
+    <div class="stat-box reveal reveal-delay-3">
+      <div class="stat-num accent-cyan">2,165</div>
+      <div class="stat-label">Line Audit Bot</div>
+    </div>
+    <div class="stat-box reveal reveal-delay-4">
+      <div class="stat-num accent-amber">4,853</div>
+      <div class="stat-label">Line Backend</div>
+    </div>
+  </div>
+  <div class="reveal reveal-delay-4" style="text-align:center;margin-top:clamp(1.5rem,3vh,2.5rem);">
+    <div style="display:inline-flex;gap:clamp(0.5rem,1vw,1rem);flex-wrap:wrap;justify-content:center;">
+      <span class="badge badge-amber">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        22 Component Dirs
+      </span>
+      <span class="badge badge-red">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        6 DB Tables
+      </span>
+      <span class="badge badge-amber">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        5 React Contexts
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 9: End -->
+<section class="slide" id="s9" style="justify-content:center;align-items:center;text-align:center;">
+  <div class="glow glow-amber" style="top:30%;left:30%;opacity:0.1;"></div>
+  <div class="glow glow-red" style="bottom:20%;right:25%;opacity:0.08;"></div>
+  <div class="reveal">
+    <div class="end-line" style="margin:0 auto clamp(0.75rem,1.5vh,1.25rem);"></div>
+    <h1 style="font-size:clamp(1.8rem,4vw,3.5rem);">Portfolio <span class="accent-amber">Manager</span></h1>
+    <p class="subtitle reveal reveal-delay-1" style="margin:clamp(0.5rem,1vh,0.75rem) auto 0;text-align:center;">
+      Disciplined investing through code.
+    </p>
+    <p class="reveal reveal-delay-2" style="margin-top:clamp(1rem,2vh,1.5rem);font-size:clamp(0.8rem,1.2vw,0.95rem);color:var(--text-dim);">
+      Built by <span style="color:var(--text);font-weight:600;">Jazz Lien</span> &middot; 2026
+    </p>
+  </div>
+</section>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progress');
+  const navDotsContainer = document.getElementById('navDots');
+
+  // Create nav dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navDotsContainer.appendChild(dot);
+  });
+  const dots = navDotsContainer.querySelectorAll('.nav-dot');
+
+  // Intersection Observer for reveals and active slide tracking
+  let currentSlide = 0;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Reveal animations
+        entry.target.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+        // Track current slide
+        const idx = Array.from(slides).indexOf(entry.target);
+        if (idx !== -1) {
+          currentSlide = idx;
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+          progressBar.style.width = ((idx + 1) / totalSlides * 100) + '%';
+        }
+      }
+    });
+  }, { threshold: 0.45 });
+
+  slides.forEach(s => observer.observe(s));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      if (currentSlide < totalSlides - 1) {
+        slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      if (currentSlide > 0) {
+        slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      slides[0].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      slides[totalSlides - 1].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+})();
+</script>
+</body>
+</html>

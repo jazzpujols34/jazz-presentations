@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP Landing Zone — Production-Grade Terraform Infrastructure</title>
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #38bdf8;
+  --primary-dim: rgba(56, 189, 248, 0.15);
+  --secondary: #818cf8;
+  --secondary-dim: rgba(129, 140, 248, 0.12);
+  --tertiary: #f97316;
+  --bg: #0a0e1a;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-bright: #f8fafc;
+  --border: rgba(255,255,255,0.06);
+  --radius: 16px;
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+}
+
+html {
+  scroll-snap-type: y mandatory;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Progress Bar ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 1000;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  width: 0%; transition: width 0.35s ease;
+}
+
+/* ── Nav Dots ── */
+.nav-dots {
+  position: fixed; right: clamp(12px, 2vw, 28px); top: 50%;
+  transform: translateY(-50%); z-index: 999;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.nav-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); border: none; cursor: pointer;
+  transition: all 0.3s ease; padding: 0;
+}
+.nav-dot.active {
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  transform: scale(1.3);
+}
+
+/* ── Grain Overlay ── */
+.grain {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Glow Orbs ── */
+.orb {
+  position: absolute; border-radius: 50%; filter: blur(100px);
+  pointer-events: none; opacity: 0.25;
+}
+.orb-1 { width: 500px; height: 500px; background: var(--primary); top: -15%; right: -10%; }
+.orb-2 { width: 400px; height: 400px; background: var(--secondary); bottom: -10%; left: -8%; }
+.orb-3 { width: 350px; height: 350px; background: var(--tertiary); top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0.1; }
+
+/* ── Slide Base ── */
+.slide {
+  position: relative;
+  width: 100%; height: 100vh; min-height: 100vh; max-height: 100vh;
+  overflow: hidden;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: clamp(24px, 5vh, 64px) clamp(24px, 6vw, 120px);
+}
+
+.slide-inner {
+  max-width: 1100px; width: 100%;
+  opacity: 0; transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.slide-inner.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+/* ── Typography ── */
+h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+  line-height: 1.08;
+  color: var(--text-bright);
+  letter-spacing: -0.03em;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  line-height: 1.15;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+  margin-bottom: clamp(16px, 3vh, 32px);
+}
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+p, li {
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--text);
+}
+.label {
+  font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.subtitle {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  color: var(--text-dim);
+  max-width: 640px;
+  line-height: 1.55;
+}
+
+/* ── Accent line ── */
+.accent-line {
+  width: 48px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  margin-bottom: 20px;
+}
+
+/* ── Cards Grid ── */
+.cards {
+  display: grid; gap: clamp(10px, 1.5vw, 16px);
+}
+.cards-3 { grid-template-columns: repeat(3, 1fr); }
+.cards-4 { grid-template-columns: repeat(4, 1fr); }
+.cards-2 { grid-template-columns: repeat(2, 1fr); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(14px, 2vw, 24px);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(56,189,248,0.15);
+}
+.card .icon {
+  width: 36px; height: 36px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; background: var(--primary-dim);
+}
+.card .icon svg { width: 20px; height: 20px; stroke: var(--primary); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.card .icon.purple { background: var(--secondary-dim); }
+.card .icon.purple svg { stroke: var(--secondary); }
+.card .icon.orange { background: rgba(249,115,22,0.12); }
+.card .icon.orange svg { stroke: var(--tertiary); }
+.card p {
+  font-size: clamp(0.72rem, 1.1vw, 0.88rem);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ── Bullet list ── */
+.bullet-list {
+  list-style: none; display: flex; flex-direction: column;
+  gap: clamp(8px, 1.2vh, 14px);
+}
+.bullet-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+}
+.bullet-list li svg {
+  flex-shrink: 0; width: 20px; height: 20px; margin-top: 3px;
+  stroke: var(--primary); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── Architecture Diagram ── */
+.arch-diagram {
+  display: flex; flex-direction: column; gap: clamp(6px, 1vh, 12px);
+  width: 100%;
+}
+.arch-tier {
+  display: flex; align-items: center; gap: clamp(8px, 1vw, 16px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: clamp(10px, 1.5vh, 18px) clamp(14px, 2vw, 24px);
+}
+.arch-tier .tier-icon {
+  flex-shrink: 0; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+}
+.arch-tier .tier-icon svg {
+  width: 22px; height: 22px; fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.arch-tier .tier-label {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(0.8rem, 1.2vw, 1rem); color: var(--text-bright);
+}
+.arch-tier .tier-desc {
+  font-size: clamp(0.7rem, 1vw, 0.85rem); color: var(--text-dim);
+}
+.arch-arrow {
+  display: flex; justify-content: center;
+  color: var(--text-dim); opacity: 0.4;
+}
+.arch-arrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── Stats Row ── */
+.stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 2vw, 24px);
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1.1;
+}
+.stat-label {
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  color: var(--text-dim); margin-top: 4px;
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+}
+
+/* ── Tech pills ── */
+.tech-pills {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: clamp(6px, 1vh, 10px) clamp(14px, 1.5vw, 20px);
+  font-size: clamp(0.72rem, 1vw, 0.88rem);
+  font-weight: 500; color: var(--text);
+  transition: border-color 0.3s ease;
+}
+.pill:hover { border-color: rgba(56,189,248,0.25); }
+.pill svg {
+  width: 16px; height: 16px; stroke: var(--primary); fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── Title Slide specifics ── */
+.title-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--primary-dim); border: 1px solid rgba(56,189,248,0.2);
+  border-radius: 100px; padding: 6px 16px;
+  font-size: clamp(0.7rem, 1vw, 0.85rem); font-weight: 600;
+  color: var(--primary); margin-bottom: 20px;
+}
+.title-badge svg {
+  width: 16px; height: 16px; stroke: var(--primary); fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.title-stats {
+  display: flex; gap: 24px; margin-top: clamp(20px, 3vh, 36px);
+  flex-wrap: wrap;
+}
+.title-stat {
+  font-size: clamp(0.78rem, 1.1vw, 0.92rem);
+  color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.title-stat strong {
+  color: var(--text-bright); font-weight: 700;
+}
+
+/* ── End slide ── */
+.end-name {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Gotcha card ── */
+.gotcha-list {
+  display: flex; flex-direction: column;
+  gap: clamp(8px, 1.2vh, 14px);
+}
+.gotcha {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: clamp(12px, 1.5vh, 18px) clamp(14px, 2vw, 22px);
+}
+.gotcha-num {
+  flex-shrink: 0; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--primary-dim);
+  font-family: var(--font-display); font-weight: 800;
+  font-size: 0.8rem; color: var(--primary);
+}
+.gotcha p {
+  font-size: clamp(0.78rem, 1.15vw, 0.95rem);
+  color: var(--text); line-height: 1.5;
+}
+.gotcha strong { color: var(--text-bright); }
+
+/* ── Two columns ── */
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 3vw, 48px);
+  align-items: start;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .cards-3, .cards-4 { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .two-col { grid-template-columns: 1fr; }
+  .nav-dots { display: none; }
+}
+@media (max-width: 480px) {
+  .cards-3, .cards-4, .cards-2 { grid-template-columns: 1fr; }
+}
+@media (max-height: 700px) {
+  .slide { padding: clamp(16px, 3vh, 32px) clamp(20px, 5vw, 80px); }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 3.2rem); }
+  h2 { font-size: clamp(1.3rem, 3vw, 2.2rem); margin-bottom: clamp(10px, 2vh, 20px); }
+  .card { padding: clamp(10px, 1.5vw, 16px); }
+  .card .icon { width: 30px; height: 30px; margin-bottom: 6px; }
+  .card .icon svg { width: 16px; height: 16px; }
+  .gotcha { padding: clamp(8px, 1vh, 12px) clamp(10px, 1.5vw, 16px); }
+  .stat-value { font-size: clamp(1.6rem, 3.5vw, 2.8rem); }
+}
+@media (max-height: 600px) {
+  h1 { font-size: clamp(1.5rem, 4vw, 2.6rem); }
+  h2 { font-size: clamp(1.1rem, 2.5vw, 1.8rem); margin-bottom: clamp(8px, 1.5vh, 14px); }
+  .bullet-list { gap: 6px; }
+  .bullet-list li { font-size: clamp(0.75rem, 1.1vw, 0.9rem); }
+  .cards { gap: 8px; }
+  .arch-tier { padding: 8px 12px; }
+  .arch-diagram { gap: 4px; }
+  .arch-arrow { display: none; }
+}
+@media (max-height: 500px) {
+  .slide { padding: 12px clamp(16px, 4vw, 60px); }
+  h1 { font-size: clamp(1.3rem, 3.5vw, 2.2rem); }
+  h2 { font-size: clamp(1rem, 2vw, 1.5rem); margin-bottom: 8px; }
+  .label { margin-bottom: 4px; }
+  .accent-line { margin-bottom: 10px; }
+  .subtitle { font-size: clamp(0.8rem, 1.4vw, 1rem); }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .slide-inner { opacity: 1; transform: none; transition: none; }
+  .progress-bar { transition: none; }
+  .nav-dot { transition: none; }
+  .orb { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- ══════════════════════ SLIDE 1: TITLE ══════════════════════ -->
+<section class="slide" data-slide="0">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="slide-inner">
+    <div class="title-badge">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Terraform + Google Cloud
+    </div>
+    <h1 style="margin-bottom: clamp(12px, 2vh, 20px);">GCP Landing Zone</h1>
+    <p class="subtitle">Production-grade 3-tier infrastructure on Google Cloud, fully automated with Terraform. 54 resources across 7 modules.</p>
+    <div class="title-stats">
+      <span class="title-stat"><strong>54</strong> Resources</span>
+      <span class="title-stat"><strong>7</strong> Modules</span>
+      <span class="title-stat"><strong>~15 min</strong> Deploy</span>
+      <span class="title-stat"><strong>$3-5</strong>/day</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 2: WHY ══════════════════════ -->
+<section class="slide" data-slide="1">
+  <div class="orb orb-3"></div>
+  <div class="slide-inner">
+    <p class="label">The Problem</p>
+    <div class="accent-line"></div>
+    <h2>Cloud infrastructure is hard<br>to get right from scratch.</h2>
+    <ul class="bullet-list" style="max-width: 680px;">
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Most teams click through the console. One misconfig = <strong style="color:var(--primary)">open database</strong>, <strong style="color:var(--tertiary)">public bucket</strong>, or surprise bill.</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+        <span>Infrastructure as Code eliminates drift, enforces standards, and makes <strong style="color:var(--text-bright)">every change auditable</strong>.</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        <span>This project is a <strong style="color:var(--secondary)">production-ready reference</strong> — network isolation, WAF, secrets management, autoscaling — all codified.</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        <span>Deploy a secure 3-tier GCP environment in ~15 minutes. Tear it down in seconds. Repeat anywhere.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 3: ARCHITECTURE ══════════════════════ -->
+<section class="slide" data-slide="2">
+  <div class="orb orb-1" style="opacity:0.12; top:60%; right:-15%;"></div>
+  <div class="slide-inner">
+    <p class="label">Architecture</p>
+    <div class="accent-line"></div>
+    <h2>3-Tier Infrastructure</h2>
+    <div class="arch-diagram">
+      <!-- Internet + WAF -->
+      <div class="arch-tier">
+        <div class="tier-icon" style="background:rgba(249,115,22,0.12);">
+          <svg viewBox="0 0 24 24" style="stroke:var(--tertiary);"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <div>
+          <div class="tier-label">Internet / Edge</div>
+          <div class="tier-desc">Cloud Armor (WAF) + Global HTTPS Load Balancer + Cloud CDN</div>
+        </div>
+      </div>
+      <div class="arch-arrow"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>
+      <!-- Frontend -->
+      <div class="arch-tier">
+        <div class="tier-icon" style="background:var(--primary-dim);">
+          <svg viewBox="0 0 24 24" style="stroke:var(--primary);"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        </div>
+        <div>
+          <div class="tier-label">Frontend Tier</div>
+          <div class="tier-desc">GCE + nginx in public subnet (Managed Instance Group, autoscaler)</div>
+        </div>
+      </div>
+      <div class="arch-arrow"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>
+      <!-- Backend -->
+      <div class="arch-tier">
+        <div class="tier-icon" style="background:var(--secondary-dim);">
+          <svg viewBox="0 0 24 24" style="stroke:var(--secondary);"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+        </div>
+        <div>
+          <div class="tier-label">Backend Tier</div>
+          <div class="tier-desc">GCE + Python Flask API in private subnet (Cloud NAT for outbound)</div>
+        </div>
+      </div>
+      <div class="arch-arrow"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>
+      <!-- Database -->
+      <div class="arch-tier">
+        <div class="tier-icon" style="background:rgba(249,115,22,0.12);">
+          <svg viewBox="0 0 24 24" style="stroke:var(--tertiary);"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div>
+          <div class="tier-label">Database</div>
+          <div class="tier-desc">Cloud SQL PostgreSQL -- private IP only, VPC peering, automated backups</div>
+        </div>
+      </div>
+      <!-- Network + Secrets -->
+      <div style="display:flex; gap:clamp(8px,1vw,16px); margin-top: 4px;">
+        <div class="arch-tier" style="flex:1;">
+          <div class="tier-icon" style="background:var(--primary-dim);">
+            <svg viewBox="0 0 24 24" style="stroke:var(--primary);"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14"/><circle cx="12" cy="12" r="2"/><path d="M7 12H2"/><path d="M22 12h-5"/></svg>
+          </div>
+          <div>
+            <div class="tier-label">Network</div>
+            <div class="tier-desc">VPC, subnets, Cloud NAT, firewall rules</div>
+          </div>
+        </div>
+        <div class="arch-tier" style="flex:1;">
+          <div class="tier-icon" style="background:var(--secondary-dim);">
+            <svg viewBox="0 0 24 24" style="stroke:var(--secondary);"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div>
+            <div class="tier-label">Secrets</div>
+            <div class="tier-desc">Secret Manager for DB credentials</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 4: 7 MODULES ══════════════════════ -->
+<section class="slide" data-slide="3">
+  <div class="orb orb-2" style="opacity:0.15; bottom:-20%; left:50%;"></div>
+  <div class="slide-inner">
+    <p class="label">Infrastructure as Code</p>
+    <div class="accent-line"></div>
+    <h2>7 Terraform Modules</h2>
+    <div class="cards cards-4" style="margin-bottom:12px;">
+      <!-- Network -->
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14"/><circle cx="12" cy="12" r="2"/><path d="M7 12H2"/><path d="M22 12h-5"/></svg>
+        </div>
+        <h3>Network</h3>
+        <p>VPC, subnets, firewall, Cloud Router, NAT, Private Services Access</p>
+      </div>
+      <!-- IAM -->
+      <div class="card">
+        <div class="icon purple">
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>IAM</h3>
+        <p>Service accounts with least-privilege role bindings</p>
+      </div>
+      <!-- Compute -->
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></svg>
+        </div>
+        <h3>Compute</h3>
+        <p>Instance templates, MIGs, health checks, autoscalers</p>
+      </div>
+      <!-- Database -->
+      <div class="card">
+        <div class="icon orange">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h3>Database</h3>
+        <p>Cloud SQL PostgreSQL, private IP, automated backups</p>
+      </div>
+    </div>
+    <div class="cards cards-3">
+      <!-- Storage -->
+      <div class="card">
+        <div class="icon purple">
+          <svg viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 002-2V7.5L14.5 2H6a2 2 0 00-2 2v4"/><path d="M14 2v6h6"/><path d="M2 15h10"/><path d="M5 12l-3 3 3 3"/></svg>
+        </div>
+        <h3>Storage</h3>
+        <p>GCS bucket + IAM bindings</p>
+      </div>
+      <!-- Secrets -->
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h3>Secrets</h3>
+        <p>Secret Manager entries + access bindings</p>
+      </div>
+      <!-- Load Balancer -->
+      <div class="card">
+        <div class="icon orange">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <h3>Load Balancer</h3>
+        <p>Global LB, backend services, URL routing, CDN</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 5: ENTERPRISE PATTERNS ══════════════════════ -->
+<section class="slide" data-slide="4">
+  <div class="orb orb-1" style="opacity:0.15; top:-10%; left:-10%;"></div>
+  <div class="slide-inner">
+    <p class="label">Production Patterns</p>
+    <div class="accent-line"></div>
+    <h2>Enterprise Patterns Demonstrated</h2>
+    <div class="cards cards-3">
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Network Isolation</h3>
+        <p>Public and private subnets with strict firewall rules between tiers</p>
+      </div>
+      <div class="card">
+        <div class="icon purple">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <h3>VPC Peering</h3>
+        <p>Private Services Access for managed services -- the tricky part</p>
+      </div>
+      <div class="card">
+        <div class="icon orange">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Least-Privilege IAM</h3>
+        <p>No default compute service account. Custom SAs with minimal roles.</p>
+      </div>
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h3>Secrets Management</h3>
+        <p>Secret Manager for credentials. Not env vars, not config files.</p>
+      </div>
+      <div class="card">
+        <div class="icon purple">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+        </div>
+        <h3>Defense in Depth</h3>
+        <p>Layered security: firewall rules + Cloud Armor WAF at the edge</p>
+      </div>
+      <div class="card">
+        <div class="icon orange">
+          <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        </div>
+        <h3>Cost Control</h3>
+        <p>Preemptible instances, autoscaling, right-sized e2-micro VMs</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 6: TECH STACK ══════════════════════ -->
+<section class="slide" data-slide="5">
+  <div class="orb orb-3" style="opacity:0.08;"></div>
+  <div class="slide-inner" style="text-align:center;">
+    <p class="label">Tools</p>
+    <div class="accent-line" style="margin-left:auto; margin-right:auto;"></div>
+    <h2>Tech Stack</h2>
+    <div class="tech-pills">
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Terraform >= 1.5
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></svg>
+        GCE (e2-micro)
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Cloud SQL PostgreSQL 15
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+        Global HTTPS LB
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Cloud CDN
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14"/><circle cx="12" cy="12" r="2"/></svg>
+        Cloud NAT
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Cloud Armor
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Secret Manager
+      </span>
+      <span class="pill">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        Cloud Logging
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 7: KEY LEARNINGS ══════════════════════ -->
+<section class="slide" data-slide="6">
+  <div class="orb orb-2" style="opacity:0.12; bottom:-15%; right:-10%;"></div>
+  <div class="slide-inner">
+    <p class="label">Hard-Won Gotchas</p>
+    <div class="accent-line"></div>
+    <h2>Key Learnings</h2>
+    <div class="gotcha-list">
+      <div class="gotcha">
+        <div class="gotcha-num">1</div>
+        <p><strong>Public subnet still needs NAT</strong> -- instances have no external IPs; all traffic routes through the load balancer. Outbound requires Cloud NAT.</p>
+      </div>
+      <div class="gotcha">
+        <div class="gotcha-num">2</div>
+        <p><strong>Private Services Access requires /16 CIDR + VPC peering</strong> -- the most confusing part of Cloud SQL private networking. Needs a reserved IP range and explicit peering connection.</p>
+      </div>
+      <div class="gotcha">
+        <div class="gotcha-num">3</div>
+        <p><strong>5 resources = 1 load balancer</strong> -- GCP LB is verbose: forwarding rule, target proxy, URL map, backend service, health check. Each one a separate Terraform resource.</p>
+      </div>
+      <div class="gotcha">
+        <div class="gotcha-num">4</div>
+        <p><strong>Cloud Armor quota = 0 on free trial</strong> -- you need to request a quota increase or use a billing account. Discovered this at deploy time.</p>
+      </div>
+      <div class="gotcha">
+        <div class="gotcha-num">5</div>
+        <p><strong>Interactive setup.sh for guided deployment</strong> -- built a shell script that walks through project setup, API enablement, and terraform apply in ~15 minutes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 8: STATS ══════════════════════ -->
+<section class="slide" data-slide="7">
+  <div class="orb orb-1" style="opacity:0.18; top:20%; left:-10%;"></div>
+  <div class="orb orb-2" style="opacity:0.12; bottom:10%; right:-5%;"></div>
+  <div class="slide-inner" style="text-align:center;">
+    <p class="label">By The Numbers</p>
+    <div class="accent-line" style="margin-left:auto; margin-right:auto;"></div>
+    <h2>Project Stats</h2>
+    <div class="stats" style="margin-top: clamp(24px, 4vh, 48px);">
+      <div>
+        <div class="stat-value">54</div>
+        <div class="stat-label">GCP Resources</div>
+      </div>
+      <div>
+        <div class="stat-value">7</div>
+        <div class="stat-label">Terraform Modules</div>
+      </div>
+      <div>
+        <div class="stat-value">$3-5</div>
+        <div class="stat-label">Per Day Cost</div>
+      </div>
+      <div>
+        <div class="stat-value">~15</div>
+        <div class="stat-label">Min Deploy Time</div>
+      </div>
+    </div>
+    <p style="margin-top:clamp(24px,4vh,48px); color:var(--text-dim); font-size:clamp(0.85rem,1.2vw,1rem); max-width:560px; margin-left:auto; margin-right:auto;">
+      A production-grade landing zone you can deploy in 15 minutes, tear down in seconds, and fork for any GCP project.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════ SLIDE 9: END ══════════════════════ -->
+<section class="slide" data-slide="8">
+  <div class="orb orb-3" style="opacity:0.15;"></div>
+  <div class="slide-inner" style="text-align:center;">
+    <h1 style="margin-bottom: clamp(12px, 2vh, 24px);">GCP Landing Zone</h1>
+    <p class="subtitle" style="margin-left:auto; margin-right:auto; margin-bottom: clamp(24px, 4vh, 48px);">
+      Production-grade Terraform infrastructure on Google Cloud.
+    </p>
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap;">
+      <span class="end-name">Built by Jazz Lien</span>
+      <span style="color:var(--text-dim); font-size:0.9rem;">|</span>
+      <span style="color:var(--text-dim); font-size:clamp(0.8rem,1vw,0.95rem);">2026</span>
+    </div>
+    <div class="title-stats" style="justify-content:center; margin-top:clamp(16px,3vh,32px);">
+      <span class="title-stat">
+        <svg style="width:16px;height:16px;stroke:var(--primary);fill:none;stroke-width:2;" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        <span>github.com/jazzpujols34</span>
+      </span>
+      <span class="title-stat">
+        <svg style="width:16px;height:16px;stroke:var(--primary);fill:none;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        <span>jazzlien.com</span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  'use strict';
+
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progressBar');
+  const navDotsContainer = document.getElementById('navDots');
+
+  // Build nav dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.classList.add('nav-dot');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navDotsContainer.appendChild(dot);
+  });
+
+  const dots = document.querySelectorAll('.nav-dot');
+
+  // Intersection Observer for animations + active state
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const inner = entry.target.querySelector('.slide-inner');
+      if (entry.isIntersecting) {
+        if (inner) inner.classList.add('visible');
+        const idx = parseInt(entry.target.dataset.slide);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        const progress = ((idx + 1) / totalSlides) * 100;
+        progressBar.style.width = progress + '%';
+      }
+    });
+  }, {
+    threshold: 0.5
+  });
+
+  slides.forEach(slide => observer.observe(slide));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      navigateSlide(1);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateSlide(-1);
+    }
+  });
+
+  function getCurrentSlide() {
+    const scrollPos = window.scrollY;
+    const vh = window.innerHeight;
+    return Math.round(scrollPos / vh);
+  }
+
+  function navigateSlide(direction) {
+    const current = getCurrentSlide();
+    const next = Math.max(0, Math.min(totalSlides - 1, current + direction));
+    slides[next].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Initial state
+  requestAnimationFrame(() => {
+    const first = slides[0].querySelector('.slide-inner');
+    if (first) first.classList.add('visible');
+    dots[0].classList.add('active');
+    progressBar.style.width = (1 / totalSlides * 100) + '%';
+  });
+})();
+</script>
+</body>
+</html>

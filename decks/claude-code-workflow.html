@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Workflow — A Complete AI-Assisted Development System</title>
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #39d353;
+  --primary-dim: rgba(57, 211, 83, 0.15);
+  --primary-glow: rgba(57, 211, 83, 0.4);
+  --secondary: #58a6ff;
+  --secondary-dim: rgba(88, 166, 255, 0.15);
+  --tertiary: #f0883e;
+  --tertiary-dim: rgba(240, 136, 62, 0.15);
+  --bg: #0a0a0f;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.07);
+  --surface: #13131a;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e6edf3;
+  --text-dim: rgba(230, 237, 243, 0.55);
+  --text-muted: rgba(230, 237, 243, 0.35);
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+  --slide-pad-x: clamp(2rem, 6vw, 6rem);
+  --slide-pad-y: clamp(2rem, 4vh, 4rem);
+}
+
+html {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* ===== GRAIN OVERLAY ===== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ===== PROGRESS BAR ===== */
+#progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  z-index: 10000;
+  transition: width 0.3s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ===== NAV DOTS ===== */
+#nav-dots {
+  position: fixed;
+  right: clamp(0.75rem, 2vw, 1.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10000;
+}
+.nav-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+.nav-dot:hover { background: var(--text-dim); transform: scale(1.3); }
+.nav-dot.active { background: var(--primary); box-shadow: 0 0 8px var(--primary-glow); transform: scale(1.2); }
+
+/* ===== SLIDE BASE ===== */
+.slide {
+  height: 100vh;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--slide-pad-y) var(--slide-pad-x);
+  position: relative;
+}
+
+/* ===== GLOW ORBS ===== */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.slide.visible .orb { opacity: 1; }
+.orb-green { background: var(--primary-glow); width: 300px; height: 300px; }
+.orb-blue { background: rgba(88, 166, 255, 0.2); width: 350px; height: 350px; }
+.orb-orange { background: rgba(240, 136, 62, 0.15); width: 250px; height: 250px; }
+
+/* ===== TYPOGRAPHY ===== */
+.slide-label {
+  font-family: var(--font-body);
+  font-size: clamp(0.65rem, 0.8vw, 0.8rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--primary);
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 3.5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+}
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  line-height: 1.2;
+}
+.subtitle {
+  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
+  color: var(--text-dim);
+  max-width: 640px;
+  line-height: 1.6;
+}
+.highlight { color: var(--primary); }
+.highlight-blue { color: var(--secondary); }
+.highlight-orange { color: var(--tertiary); }
+
+/* ===== ANIMATIONS ===== */
+.animate-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.slide.visible .animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.slide.visible .animate-in:nth-child(2) { transition-delay: 0.1s; }
+.slide.visible .animate-in:nth-child(3) { transition-delay: 0.2s; }
+.slide.visible .animate-in:nth-child(4) { transition-delay: 0.3s; }
+.slide.visible .animate-in:nth-child(5) { transition-delay: 0.4s; }
+.slide.visible .animate-in:nth-child(6) { transition-delay: 0.5s; }
+
+/* stagger for card grids */
+.card-grid .animate-in:nth-child(1) { transition-delay: 0.05s; }
+.card-grid .animate-in:nth-child(2) { transition-delay: 0.1s; }
+.card-grid .animate-in:nth-child(3) { transition-delay: 0.15s; }
+.card-grid .animate-in:nth-child(4) { transition-delay: 0.2s; }
+.card-grid .animate-in:nth-child(5) { transition-delay: 0.25s; }
+.card-grid .animate-in:nth-child(6) { transition-delay: 0.3s; }
+
+/* ===== CARDS ===== */
+.card-grid {
+  display: grid;
+  gap: clamp(0.6rem, 1.2vw, 1rem);
+}
+.card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: clamp(0.8rem, 1.5vw, 1.25rem);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.card-icon {
+  width: clamp(28px, 3vw, 36px);
+  height: clamp(28px, 3vw, 36px);
+  margin-bottom: clamp(0.4rem, 0.8vh, 0.6rem);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.card-icon.blue { color: var(--secondary); }
+.card-icon.orange { color: var(--tertiary); }
+.card h3 { margin-bottom: clamp(0.2rem, 0.4vh, 0.3rem); }
+.card p {
+  font-size: clamp(0.72rem, 0.95vw, 0.88rem);
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+/* ===== FLYWHEEL ===== */
+.flywheel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vh, 0.75rem);
+  max-width: 680px;
+}
+.flywheel-item {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 1.2vw, 1rem);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.8rem, 1.5vw, 1.25rem);
+}
+.flywheel-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  color: var(--primary);
+  white-space: nowrap;
+  min-width: clamp(100px, 14vw, 150px);
+}
+.flywheel-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.flywheel-desc {
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  color: var(--text-dim);
+}
+
+/* ===== BULLET LIST ===== */
+.bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 0.8vh, 0.65rem);
+}
+.bullet-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.bullet-list .bullet-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* ===== OPTION CARDS (Quick Start) ===== */
+.option-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.6rem, 1.2vw, 1rem);
+}
+.option-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  text-align: center;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.option-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255,255,255,0.12);
+}
+.option-badge {
+  display: inline-block;
+  font-size: clamp(0.6rem, 0.7vw, 0.7rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.2em 0.7em;
+  border-radius: 100px;
+  margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+}
+.option-badge.green { background: var(--primary-dim); color: var(--primary); }
+.option-badge.blue { background: var(--secondary-dim); color: var(--secondary); }
+.option-badge.orange { background: var(--tertiary-dim); color: var(--tertiary); }
+.option-time {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+  line-height: 1;
+  margin-bottom: clamp(0.15rem, 0.3vh, 0.25rem);
+}
+.option-label {
+  font-weight: 600;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  margin-bottom: clamp(0.3rem, 0.6vh, 0.5rem);
+}
+.option-desc {
+  font-size: clamp(0.68rem, 0.85vw, 0.8rem);
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* ===== CHAPTER LIST (PM) ===== */
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.3rem, 0.6vh, 0.5rem) clamp(1rem, 2vw, 2rem);
+}
+.chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  color: var(--text-dim);
+  padding: clamp(0.3rem, 0.5vh, 0.4rem) 0;
+}
+.chapter-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: var(--primary);
+  background: var(--primary-dim);
+  width: clamp(24px, 2.5vw, 30px);
+  height: clamp(24px, 2.5vw, 30px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* ===== RESULTS STATS ===== */
+.stats-row {
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-bottom: clamp(1rem, 2vh, 1.5rem);
+}
+.stat {
+  text-align: left;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label {
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+/* project tags */
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.3rem, 0.6vw, 0.5rem);
+}
+.project-tag {
+  font-size: clamp(0.65rem, 0.8vw, 0.78rem);
+  font-weight: 500;
+  padding: 0.25em 0.75em;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--bg-card);
+}
+
+/* ===== TITLE SLIDE SPECIFICS ===== */
+.title-terminal {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: var(--primary);
+  background: var(--primary-dim);
+  padding: 0.35em 0.8em;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: clamp(0.75rem, 1.5vh, 1rem);
+  letter-spacing: 0.02em;
+}
+.title-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: clamp(1rem, 2vh, 1.5rem);
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  font-weight: 600;
+  color: var(--primary);
+  opacity: 0.7;
+}
+
+/* ===== END SLIDE ===== */
+.end-links {
+  display: flex;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  margin-top: clamp(1rem, 2vh, 1.5rem);
+}
+.end-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.end-link:hover { color: var(--primary); }
+.end-link svg { width: 16px; height: 16px; }
+.end-year {
+  font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+  color: var(--text-muted);
+  margin-top: clamp(0.75rem, 1.5vh, 1rem);
+}
+
+/* ===== RESPONSIVE: SHORT SCREENS ===== */
+@media (max-height: 700px) {
+  .slide { padding: clamp(1.2rem, 3vh, 2rem) var(--slide-pad-x); }
+  .card-grid { gap: clamp(0.4rem, 0.8vw, 0.6rem); }
+  .card { padding: clamp(0.6rem, 1vw, 0.9rem); }
+  .flywheel { gap: clamp(0.35rem, 0.6vh, 0.5rem); }
+  .flywheel-item { padding: clamp(0.4rem, 0.8vw, 0.7rem) clamp(0.6rem, 1vw, 0.9rem); }
+}
+@media (max-height: 600px) {
+  h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); }
+  h2 { font-size: clamp(1.3rem, 2.8vw, 2rem); }
+  .subtitle { font-size: clamp(0.8rem, 1.2vw, 1rem); }
+  .stats-row { gap: clamp(1rem, 3vw, 2rem); }
+  .stat-value { font-size: clamp(1.5rem, 3vw, 2.5rem); }
+}
+@media (max-height: 500px) {
+  .slide { padding: 1rem var(--slide-pad-x); }
+  .slide-label { margin-bottom: 0.3rem; }
+  h2 { margin-bottom: 0.4rem; }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+  .card-icon { width: 22px; height: 22px; margin-bottom: 0.2rem; }
+}
+
+/* ===== RESPONSIVE: NARROW SCREENS ===== */
+@media (max-width: 768px) {
+  .card-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .option-cards { grid-template-columns: 1fr; }
+  .chapter-grid { grid-template-columns: 1fr; }
+  .stats-row { flex-direction: column; gap: 1rem; }
+  #nav-dots { display: none; }
+}
+@media (max-width: 480px) {
+  .card-grid.cols-3, .card-grid.cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ===== SYSTEM FLOW ===== */
+.system-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-top: clamp(0.4rem, 1vh, 0.75rem);
+  width: 100%;
+  max-width: none;
+}
+
+/* ===== SYSTEM GRID (two-column layout) ===== */
+.system-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: start;
+  margin-top: var(--content-gap, clamp(0.5rem, 1.5vh, 1rem));
+}
+.system-details {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vh, 0.75rem);
+}
+.detail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.8rem, 1.5vw, 1.25rem);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.detail-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.detail-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  color: var(--primary);
+  margin-bottom: 0.2rem;
+}
+.detail-card-title.blue { color: var(--secondary); }
+.detail-card-title.orange { color: var(--tertiary); }
+.detail-card p {
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+@media (max-width: 700px) {
+  .system-grid { grid-template-columns: 1fr; }
+}
+.flow-phase {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 1.2vw, 1rem);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: clamp(0.5rem, 1vw, 0.75rem) clamp(0.8rem, 1.5vw, 1.25rem);
+  width: 100%;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.flow-phase:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.flow-phase.phase-green { border-left: 3px solid var(--primary); }
+.flow-phase.phase-blue { border-left: 3px solid var(--secondary); }
+.flow-phase.phase-orange { border-left: 3px solid var(--tertiary); }
+.phase-icon {
+  width: clamp(24px, 2.5vw, 32px);
+  height: clamp(24px, 2.5vw, 32px);
+  flex-shrink: 0;
+}
+.phase-icon.green { color: var(--primary); }
+.phase-icon.blue { color: var(--secondary); }
+.phase-icon.orange { color: var(--tertiary); }
+.phase-content { flex: 1; min-width: 0; }
+.phase-step {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.65rem, 0.8vw, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.1rem;
+}
+.phase-step.green { color: var(--primary); }
+.phase-step.blue { color: var(--secondary); }
+.phase-step.orange { color: var(--tertiary); }
+.phase-files {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+  color: var(--text);
+  line-height: 1.3;
+}
+.phase-desc {
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.flow-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: clamp(20px, 2.5vh, 28px);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.flow-arrow svg { width: 20px; height: 20px; }
+.flow-cycle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: clamp(0.2rem, 0.5vh, 0.4rem);
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  color: var(--text-muted);
+  font-style: italic;
+}
+.flow-cycle svg { width: 16px; height: 16px; color: var(--tertiary); flex-shrink: 0; }
+
+@media (max-height: 600px) {
+  .flow-phase { padding: clamp(0.35rem, 0.7vw, 0.5rem) clamp(0.6rem, 1vw, 0.9rem); }
+  .flow-arrow { height: clamp(14px, 1.8vh, 20px); }
+  .flow-arrow svg { width: 16px; height: 16px; }
+}
+@media (max-height: 500px) {
+  .system-flow { gap: 0; margin-top: 0.3rem; }
+  .flow-phase { padding: 0.3rem 0.5rem; }
+  .flow-arrow { height: 12px; }
+  .phase-icon { width: 20px; height: 20px; }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-in { opacity: 1; transform: none; transition: none; }
+  .orb { opacity: 1; transition: none; }
+  #progress { transition: none; }
+  .nav-dot { transition: none; }
+  .card, .option-card { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div id="progress"></div>
+
+<!-- Nav Dots -->
+<nav id="nav-dots" aria-label="Slide navigation"></nav>
+
+<!-- =========================================
+     SLIDE 1 — TITLE
+     ========================================= -->
+<section class="slide" data-slide="0">
+  <div class="orb orb-green" style="top:-100px;left:-80px;"></div>
+  <div class="orb orb-blue" style="bottom:-120px;right:-60px;"></div>
+
+  <div class="title-terminal animate-in">$ claude --workflow</div>
+  <h1 class="animate-in">Claude Code<br><span class="highlight">Workflow</span></h1>
+  <p class="subtitle animate-in">Not just a CLAUDE.md template. A full operating system for shipping products at <span class="highlight">10x speed</span> with AI-assisted development.</p>
+  <div class="title-cta animate-in">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    Open source on GitHub
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 2 — THE PROBLEM
+     ========================================= -->
+<section class="slide" data-slide="1">
+  <div class="orb orb-orange" style="top:10%;right:-60px;"></div>
+
+  <div class="slide-label animate-in">The Problem</div>
+  <h2 class="animate-in">Every session starts<br>from <span class="highlight-orange">zero</span></h2>
+  <div style="margin-top:clamp(0.5rem,1.5vh,1rem);">
+    <ul class="bullet-list">
+      <li class="animate-in">
+        <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        You re-explain your project, preferences, and architecture — again and again
+      </li>
+      <li class="animate-in">
+        <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Context evaporates. Decisions get forgotten. The same mistakes happen twice.
+      </li>
+      <li class="animate-in">
+        <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Each session is a blank slate instead of a continuation
+      </li>
+      <li class="animate-in">
+        <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Most developers treat Claude Code as a chat tool
+      </li>
+    </ul>
+  </div>
+  <p class="subtitle animate-in" style="margin-top:clamp(0.75rem,1.5vh,1.25rem);border-left:3px solid var(--primary);padding-left:1rem;">This system treats it as a <span class="highlight">development partner with persistent memory</span>.</p>
+</section>
+
+<!-- =========================================
+     SLIDE 3 — THE SYSTEM
+     ========================================= -->
+<section class="slide" data-slide="2">
+  <div class="orb orb-green" style="bottom:-80px;left:20%;"></div>
+
+  <div class="slide-label animate-in">The System</div>
+  <h2 class="animate-in">Six files. <span class="highlight">Total recall.</span></h2>
+
+  <div class="system-grid">
+    <!-- Left column: vertical flow diagram -->
+    <div class="system-flow" style="margin-top:0;">
+      <!-- Phase 1: Session Start -->
+      <div class="flow-phase phase-green animate-in">
+        <svg class="phase-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="phase-content">
+          <div class="phase-step green">Session Start</div>
+          <div class="phase-files">CLAUDE.md <span style="color:var(--text-muted);font-weight:400;">+</span> soul.md</div>
+          <div class="phase-desc">Auto-loaded: architecture, standards, personality, guardrails</div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flow-arrow animate-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+      </div>
+
+      <!-- Phase 2: During Session -->
+      <div class="flow-phase phase-blue animate-in">
+        <svg class="phase-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <div class="phase-content">
+          <div class="phase-step blue">During Session</div>
+          <div class="phase-files">Skills/ <span style="color:var(--text-muted);font-weight:400;">+</span> Knowledge/</div>
+          <div class="phase-desc">Decision frameworks and technical memory, on demand</div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flow-arrow animate-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+      </div>
+
+      <!-- Phase 3: Cross-Session -->
+      <div class="flow-phase phase-green animate-in">
+        <svg class="phase-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <div class="phase-content">
+          <div class="phase-step green">Cross-Session</div>
+          <div class="phase-files">DASHBOARD.md</div>
+          <div class="phase-desc">Priorities, blockers, and project status across all sessions</div>
+        </div>
+      </div>
+
+      <!-- Arrow down -->
+      <div class="flow-arrow animate-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+      </div>
+
+      <!-- Phase 4: Session End -->
+      <div class="flow-phase phase-orange animate-in">
+        <svg class="phase-icon orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <div class="phase-content">
+          <div class="phase-step orange">Session End</div>
+          <div class="phase-files">HANDOVER.md</div>
+          <div class="phase-desc">Write the relay baton -- next session picks up exactly here</div>
+        </div>
+      </div>
+
+      <!-- Cycle indicator -->
+      <div class="flow-cycle animate-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Cycle repeats: read handover, delete, work, write new handover
+      </div>
+    </div>
+
+    <!-- Right column: details panel -->
+    <div class="system-details">
+      <div class="detail-card animate-in">
+        <div class="detail-card-title">Auto-Loaded Context</div>
+        <p>CLAUDE.md + soul.md are read at every session start, providing project rules and communication style.</p>
+      </div>
+      <div class="detail-card animate-in">
+        <div class="detail-card-title blue">On-Demand Enrichment</div>
+        <p>Skills and knowledge files are loaded only when relevant, keeping context lean.</p>
+      </div>
+      <div class="detail-card animate-in">
+        <div class="detail-card-title">Persistent State</div>
+        <p>DASHBOARD.md tracks priorities across sessions, updated by the PM system.</p>
+      </div>
+      <div class="detail-card animate-in">
+        <div class="detail-card-title orange">Relay Protocol</div>
+        <p>Each agent writes a HANDOVER.md baton for the next, ensuring zero context loss.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 4 — COMPOUND EFFECT
+     ========================================= -->
+<section class="slide" data-slide="3">
+  <div class="orb orb-blue" style="top:-60px;right:10%;"></div>
+
+  <div class="slide-label animate-in">The Compound Effect</div>
+  <h2 class="animate-in">Every session builds<br>on the <span class="highlight-blue">last</span></h2>
+
+  <div class="flywheel" style="margin-top:clamp(0.5rem,1.5vh,1rem);">
+    <div class="flywheel-item animate-in">
+      <span class="flywheel-label">CLAUDE.md</span>
+      <svg class="flywheel-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      <span class="flywheel-desc">Better code from session one</span>
+    </div>
+    <div class="flywheel-item animate-in">
+      <span class="flywheel-label">HANDOVER.md</span>
+      <svg class="flywheel-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      <span class="flywheel-desc">No repeated work across sessions</span>
+    </div>
+    <div class="flywheel-item animate-in">
+      <span class="flywheel-label">Learned Rules</span>
+      <svg class="flywheel-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      <span class="flywheel-desc">Fewer bugs over time — no mistake happens twice</span>
+    </div>
+    <div class="flywheel-item animate-in">
+      <span class="flywheel-label">Skills/</span>
+      <svg class="flywheel-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      <span class="flywheel-desc">Faster, more consistent decisions</span>
+    </div>
+    <div class="flywheel-item animate-in">
+      <span class="flywheel-label">Knowledge/</span>
+      <svg class="flywheel-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      <span class="flywheel-desc">Compounding technical expertise</span>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 5 — KEY PRINCIPLES
+     ========================================= -->
+<section class="slide" data-slide="4">
+  <div class="orb orb-green" style="top:20%;right:-100px;"></div>
+  <div class="orb orb-orange" style="bottom:-80px;left:-60px;"></div>
+
+  <div class="slide-label animate-in">Key Principles</div>
+  <h2 class="animate-in">The rules that <span class="highlight">compound</span></h2>
+
+  <div class="card-grid cols-2" style="margin-top:clamp(0.5rem,1.5vh,1rem);max-width:820px;">
+    <div class="card animate-in">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <h3>Every correction = a new rule</h3>
+      <p>No mistake happens twice. Each fix gets codified as a Learned Rule in CLAUDE.md.</p>
+    </div>
+    <div class="card animate-in">
+      <svg class="card-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <h3>Know what NOT to build</h3>
+      <p>Auth goes to Clerk. Payments to Stripe. Files to R2. Only build the core value prop.</p>
+    </div>
+    <div class="card animate-in">
+      <svg class="card-icon orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>Challenge the problem first</h3>
+      <p>Delete, simplify, speed up, automate — in that order. Question before you code.</p>
+    </div>
+    <div class="card animate-in">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <h3>Ship beats perfect</h3>
+      <p>Core value prop works + 3 users can complete the flow = ship it. Iterate in production.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 6 — PM HANDBOOK
+     ========================================= -->
+<section class="slide" data-slide="5">
+  <div class="orb orb-blue" style="bottom:-100px;right:5%;"></div>
+
+  <div class="slide-label animate-in">PM Handbook</div>
+  <h2 class="animate-in">10 chapters. Full <span class="highlight-blue">lifecycle.</span></h2>
+  <p class="subtitle animate-in" style="margin-bottom:clamp(0.75rem,1.5vh,1.25rem);">From project inception to production safety, codified as decision frameworks Claude reads automatically.</p>
+
+  <div class="chapter-grid animate-in">
+    <div class="chapter-item"><span class="chapter-num">1</span> Philosophy and Mental Models</div>
+    <div class="chapter-item"><span class="chapter-num">6</span> Coding Guardrails</div>
+    <div class="chapter-item"><span class="chapter-num">2</span> Daily Workflow and Rituals</div>
+    <div class="chapter-item"><span class="chapter-num">7</span> New Project Inception</div>
+    <div class="chapter-item"><span class="chapter-num">3</span> Status Checks and Reviews</div>
+    <div class="chapter-item"><span class="chapter-num">8</span> Session Handover Protocol</div>
+    <div class="chapter-item"><span class="chapter-num">4</span> Priority Framework</div>
+    <div class="chapter-item"><span class="chapter-num">9</span> Security Audit Checklist</div>
+    <div class="chapter-item"><span class="chapter-num">5</span> Scope Management</div>
+    <div class="chapter-item"><span class="chapter-num">10</span> Production Safety (6-layer)</div>
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 7 — THE RESULTS
+     ========================================= -->
+<section class="slide" data-slide="6">
+  <div class="orb orb-green" style="top:-80px;left:30%;"></div>
+  <div class="orb orb-orange" style="bottom:10%;right:-80px;"></div>
+
+  <div class="slide-label animate-in">The Results</div>
+  <h2 class="animate-in">Battle-tested at <span class="highlight">production scale</span></h2>
+
+  <div class="stats-row animate-in" style="margin-top:clamp(0.5rem,1.5vh,1rem);">
+    <div class="stat">
+      <div class="stat-value">12+</div>
+      <div class="stat-label">Projects built in ~2 months</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">3+</div>
+      <div class="stat-label">Deployed with live payments</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">10x</div>
+      <div class="stat-label">Shipping velocity</div>
+    </div>
+  </div>
+
+  <p class="subtitle animate-in" style="margin-bottom:clamp(0.5rem,1vh,0.75rem);">Projects built with this system:</p>
+  <div class="project-tags animate-in">
+    <span class="project-tag">AI Memorial Video Platform</span>
+    <span class="project-tag">Podcast Transcription Pipeline</span>
+    <span class="project-tag">Vocabulary Learning App</span>
+    <span class="project-tag">AI Art Gallery</span>
+    <span class="project-tag">Personal Website + CMS</span>
+    <span class="project-tag">Blog Writing Workflow</span>
+    <span class="project-tag">Live Lottery App</span>
+    <span class="project-tag">GCP Documentation Q&A</span>
+  </div>
+</section>
+
+<!-- =========================================
+     SLIDE 8 — QUICK START
+     ========================================= -->
+<section class="slide" data-slide="7">
+  <div class="orb orb-blue" style="top:5%;left:-80px;"></div>
+
+  <div class="slide-label animate-in">Quick Start</div>
+  <h2 class="animate-in">Pick your <span class="highlight-blue">entry point</span></h2>
+
+  <div class="option-cards" style="margin-top:clamp(0.5rem,1.5vh,1rem);">
+    <div class="option-card animate-in">
+      <div class="option-badge green">Starter</div>
+      <div class="option-time" style="color:var(--primary);">2 min</div>
+      <div class="option-label">Just CLAUDE.md</div>
+      <div class="option-desc">Copy the template, fill in [PLACEHOLDER] markers. 80% of the benefit with zero overhead.</div>
+    </div>
+    <div class="option-card animate-in">
+      <div class="option-badge blue">Recommended</div>
+      <div class="option-time" style="color:var(--secondary);">5 min</div>
+      <div class="option-label">Copy Essentials</div>
+      <div class="option-desc">CLAUDE.md + HANDOVER.md + soul.md + DASHBOARD.md. Full session continuity.</div>
+    </div>
+    <div class="option-card animate-in">
+      <div class="option-badge orange">Complete</div>
+      <div class="option-time" style="color:var(--tertiary);">15 min</div>
+      <div class="option-label">Full System</div>
+      <div class="option-desc">All files + Skills/ + Knowledge/ + PM Handbook + shell aliases for daily workflow.</div>
+    </div>
+  </div>
+
+  <p class="animate-in" style="margin-top:clamp(0.6rem,1.2vh,1rem);font-size:clamp(0.7rem,0.9vw,0.85rem);color:var(--text-muted);">Shell aliases included: morning briefing, status checks, evaluate, audit, handover, learn</p>
+</section>
+
+<!-- =========================================
+     SLIDE 9 — END
+     ========================================= -->
+<section class="slide" data-slide="8" style="justify-content:center;align-items:center;text-align:center;">
+  <div class="orb orb-green" style="top:30%;left:10%;"></div>
+  <div class="orb orb-blue" style="bottom:20%;right:15%;"></div>
+
+  <div class="title-terminal animate-in">$ git clone claude-code-workflow</div>
+  <h1 class="animate-in" style="margin-top:clamp(0.5rem,1vh,0.75rem);">Claude Code<br><span class="highlight">Workflow</span></h1>
+  <p class="subtitle animate-in" style="text-align:center;margin:0 auto;">Open Source. Built for builders who ship.</p>
+
+  <div class="end-links animate-in">
+    <a class="end-link" href="https://github.com/jazzpujols34" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+      GitHub
+    </a>
+    <span class="end-link" style="cursor:default;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Built by Jazz Lien
+    </span>
+  </div>
+  <div class="end-year animate-in">2026</div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progress');
+  const navContainer = document.getElementById('nav-dots');
+
+  // Build nav dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.classList.add('nav-dot');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navContainer.appendChild(dot);
+  });
+  const dots = navContainer.querySelectorAll('.nav-dot');
+
+  // Intersection Observer for visibility + animations
+  let currentSlide = 0;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        const idx = parseInt(entry.target.dataset.slide, 10);
+        currentSlide = idx;
+        updateUI(idx);
+      } else {
+        entry.target.classList.remove('visible');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach((s) => observer.observe(s));
+
+  function updateUI(idx) {
+    // Progress bar
+    const pct = totalSlides <= 1 ? 100 : (idx / (totalSlides - 1)) * 100;
+    progressBar.style.width = pct + '%';
+
+    // Nav dots
+    dots.forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      const next = Math.min(currentSlide + 1, totalSlides - 1);
+      slides[next].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prev = Math.max(currentSlide - 1, 0);
+      slides[prev].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Init first slide
+  updateUI(0);
+  slides[0].classList.add('visible');
+})();
+</script>
+</body>
+</html>

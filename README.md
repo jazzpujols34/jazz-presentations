@@ -17,7 +17,13 @@ Visitors can:
 
 | # | Title | Description |
 |---|-------|-------------|
-| 001 | [PodSight](https://jazzpujols34.github.io/jazz-presentations/podsight.html) | AI-powered podcast summarization pipeline |
+| 001 | [PodSight](https://jazzpujols34.github.io/jazz-presentations/decks/podsight.html) | AI-powered podcast summarization pipeline |
+| 002 | [拾光 Glimmer](https://jazzpujols34.github.io/jazz-presentations/decks/glimmer.html) | AI memorial video generation platform |
+| 003 | [Jazz Gallery](https://jazzpujols34.github.io/jazz-presentations/decks/jazz-gallery.html) | AI artwork gallery with auth and admin |
+| 004 | [Articulate](https://jazzpujols34.github.io/jazz-presentations/decks/articulate.html) | Etymology-based vocabulary learning app |
+| 005 | [GCP Landing Zone](https://jazzpujols34.github.io/jazz-presentations/decks/gcp-landing-zone.html) | Production-grade Terraform infrastructure |
+| 006 | [Portfolio Manager](https://jazzpujols34.github.io/jazz-presentations/decks/portfolio-manager.html) | Investment portfolio tracker & audit engine |
+| 007 | [Claude Code Workflow](https://jazzpujols34.github.io/jazz-presentations/decks/claude-code-workflow.html) | AI-assisted development system (open source) |
 
 ## Project structure
 
@@ -26,6 +32,12 @@ jazz-presentations/
   index.html          # Gallery landing page
   decks/              # HTML slide decks
     podsight.html
+    glimmer.html
+    jazz-gallery.html
+    articulate.html
+    gcp-landing-zone.html
+    portfolio-manager.html
+    claude-code-workflow.html
   thumbnails/         # Card preview images
     podsight.png
   README.md

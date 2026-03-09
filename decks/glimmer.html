@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拾光 Glimmer — AI Memorial Video Platform</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500;700;800&f[]=general-sans@400;500;600&display=swap">
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES — WARM CINEMATIC THEME
+           =========================================== */
+        :root {
+            --bg: #0a0908;
+            --bg-elevated: #141210;
+            --bg-card: #1a1714;
+            --surface: #241f1a;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(232, 186, 115, 0.25);
+
+            --accent-1: #e8ba73;
+            --accent-2: #d4896a;
+            --accent-3: #a8c4b8;
+            --accent-gradient: linear-gradient(135deg, #e8ba73, #d4896a);
+            --accent-gradient-2: linear-gradient(135deg, #d4896a, #a8c4b8);
+
+            --text: #faf6f0;
+            --text-secondary: #a89e94;
+            --text-dim: #6b6058;
+
+            --font-display: 'Cabinet Grotesk', sans-serif;
+            --font-body: 'General Sans', sans-serif;
+
+            --title-size: clamp(2.5rem, 7vw, 5.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1rem, 2.2vw, 1.5rem);
+            --body-size: clamp(0.8rem, 1.4vw, 1.1rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            height: 100%;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: var(--accent-1);
+            color: var(--bg);
+        }
+
+        /* ===========================================
+           SLIDE CONTAINER
+           =========================================== */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* ===========================================
+           NAV DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: clamp(12px, 2vw, 24px);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 90;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .nav-dot.active {
+            background: var(--accent-1);
+            box-shadow: 0 0 12px rgba(232, 186, 115, 0.4);
+        }
+
+        .nav-dot:hover {
+            background: rgba(232, 186, 115, 0.6);
+        }
+
+        /* ===========================================
+           KEYBOARD HINT
+           =========================================== */
+        .keyboard-hint {
+            position: fixed;
+            bottom: clamp(12px, 2vw, 24px);
+            right: clamp(12px, 2vw, 24px);
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+            z-index: 90;
+        }
+
+        .keyboard-hint kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 3px;
+            font-size: inherit;
+            font-family: inherit;
+            color: var(--text-secondary);
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal,
+        .slide.visible .reveal-left,
+        .slide.visible .reveal-scale {
+            opacity: 1;
+            transform: translateY(0) translateX(0) scale(1);
+        }
+
+        .slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .slide.visible .reveal:nth-child(2) { transition-delay: 0.12s; }
+        .slide.visible .reveal:nth-child(3) { transition-delay: 0.19s; }
+        .slide.visible .reveal:nth-child(4) { transition-delay: 0.26s; }
+        .slide.visible .reveal:nth-child(5) { transition-delay: 0.33s; }
+        .slide.visible .reveal:nth-child(6) { transition-delay: 0.40s; }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1 {
+            font-family: var(--font-display);
+            font-size: var(--title-size);
+            font-weight: 800;
+            line-height: 1.0;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: var(--h2-size);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }
+
+        h3 {
+            font-family: var(--font-display);
+            font-size: var(--h3-size);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .body-text {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 680px;
+        }
+
+        .label {
+            font-size: var(--small-size);
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent-1);
+        }
+
+        .accent-text {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===========================================
+           DECORATIVE ELEMENTS
+           =========================================== */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .grain-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ===========================================
+           SLIDE 1: TITLE
+           =========================================== */
+        .title-slide {
+            text-align: center;
+            background: radial-gradient(ellipse at 50% 40%, rgba(232, 186, 115, 0.06) 0%, transparent 60%),
+                        var(--bg);
+        }
+
+        .title-slide .chinese-title {
+            font-family: var(--font-display);
+            font-size: clamp(1rem, 2.5vw, 1.8rem);
+            font-weight: 500;
+            color: var(--accent-1);
+            letter-spacing: 0.3em;
+            margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+        }
+
+        .title-slide h1 {
+            margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
+        }
+
+        .title-slide .tagline {
+            font-size: clamp(0.85rem, 1.8vw, 1.3rem);
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .title-url {
+            margin-top: clamp(1rem, 3vh, 2rem);
+            font-size: var(--small-size);
+            color: var(--text-dim);
+            letter-spacing: 0.08em;
+        }
+
+        .title-url span {
+            color: var(--accent-1);
+        }
+
+        /* ===========================================
+           GRID LAYOUTS
+           =========================================== */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+            gap: clamp(0.75rem, 1.5vw, 1.25rem);
+            margin-top: var(--content-gap);
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: clamp(1rem, 2vw, 1.5rem);
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+        }
+
+        .feature-card .card-icon {
+            width: 36px;
+            height: 36px;
+            margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+            color: var(--accent-1);
+        }
+
+        .feature-card h3 {
+            margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
+            font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+        }
+
+        .feature-card p {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ===========================================
+           ARCHITECTURE DIAGRAM
+           =========================================== */
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(0.5rem, 1.5vw, 1.5rem);
+            flex-wrap: wrap;
+            margin-top: var(--content-gap);
+        }
+
+        .arch-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: clamp(0.75rem, 1.5vw, 1.25rem) clamp(1rem, 2vw, 1.5rem);
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .arch-box .arch-label {
+            font-size: var(--small-size);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .arch-box .arch-value {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+            color: var(--text);
+        }
+
+        .arch-box.accent {
+            border-color: var(--border-accent);
+            background: linear-gradient(135deg, rgba(232, 186, 115, 0.08), rgba(212, 137, 106, 0.05));
+        }
+
+        .arch-arrow {
+            color: var(--text-dim);
+            font-size: clamp(1rem, 2vw, 1.5rem);
+        }
+
+        /* ===========================================
+           ARCHITECTURE DIAGRAM — VERTICAL STACKED
+           =========================================== */
+        .arch-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            margin-top: var(--content-gap);
+            width: 100%;
+            max-width: none;
+        }
+
+        .arch-tier {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.75rem, 1.5vw, 1.25rem);
+            width: 100%;
+            padding: clamp(0.6rem, 1.2vw, 1rem) clamp(1rem, 2vw, 1.5rem);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+
+        .arch-tier:hover {
+            border-color: var(--border-accent);
+        }
+
+        .tier-icon {
+            width: clamp(36px, 5vw, 44px);
+            height: clamp(36px, 5vw, 44px);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .tier-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .tier-icon.tier-browser { background: rgba(232, 186, 115, 0.15); color: var(--accent-1); }
+        .tier-icon.tier-edge    { background: rgba(212, 137, 106, 0.15); color: var(--accent-2); }
+        .tier-icon.tier-storage { background: rgba(168, 196, 184, 0.15); color: var(--accent-3); }
+        .tier-icon.tier-ai      { background: rgba(232, 186, 115, 0.15); color: var(--accent-1); }
+
+        .tier-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .tier-label {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .tier-desc {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .arch-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: clamp(20px, 3vh, 28px);
+            color: var(--text-dim);
+        }
+
+        .arch-flow-note {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: var(--content-gap);
+            max-width: 520px;
+            padding-left: 1.2em;
+            position: relative;
+        }
+
+        .arch-flow-note::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.55em;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent-1);
+        }
+
+        /* ===========================================
+           TECH STACK
+           =========================================== */
+        .stack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+            gap: clamp(0.5rem, 1vw, 0.75rem);
+            margin-top: var(--content-gap);
+        }
+
+        .stack-item {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1vw, 0.75rem);
+            padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.75rem, 1.5vw, 1.25rem);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: border-color 0.3s ease;
+        }
+
+        .stack-item:hover {
+            border-color: var(--border-accent);
+        }
+
+        .stack-item .stack-cat {
+            font-size: clamp(0.55rem, 0.8vw, 0.7rem);
+            color: var(--accent-1);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 60px;
+        }
+
+        .stack-item .stack-name {
+            font-size: var(--small-size);
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        /* ===========================================
+           STATS ROW
+           =========================================== */
+        .stats-row {
+            display: flex;
+            gap: clamp(1.5rem, 4vw, 4rem);
+            flex-wrap: wrap;
+            margin-top: var(--content-gap);
+        }
+
+        .stat {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            line-height: 1;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            margin-top: 4px;
+            letter-spacing: 0.02em;
+        }
+
+        /* ===========================================
+           PRICING
+           =========================================== */
+        .pricing-row {
+            display: flex;
+            gap: clamp(1rem, 2vw, 1.5rem);
+            margin-top: var(--content-gap);
+            flex-wrap: wrap;
+        }
+
+        .price-card {
+            flex: 1;
+            min-width: 160px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: clamp(1rem, 2vw, 1.5rem);
+            text-align: center;
+        }
+
+        .price-card.featured {
+            border-color: var(--accent-1);
+            background: linear-gradient(180deg, rgba(232, 186, 115, 0.08), var(--bg-card));
+        }
+
+        .price-card .price-name {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+
+        .price-card .price-amount {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: var(--text);
+        }
+
+        .price-card .price-unit {
+            font-size: var(--small-size);
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* ===========================================
+           EDITOR PREVIEW
+           =========================================== */
+        .editor-mock {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: clamp(1rem, 2vw, 1.5rem);
+            margin-top: var(--content-gap);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-mock .editor-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+        }
+
+        .editor-mock .editor-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+
+        .editor-mock .editor-dot:nth-child(1) { background: #e5534b; }
+        .editor-mock .editor-dot:nth-child(2) { background: #d29922; }
+        .editor-mock .editor-dot:nth-child(3) { background: #57ab5a; }
+
+        .timeline-tracks {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .track {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1vw, 0.75rem);
+            height: clamp(28px, 4vh, 36px);
+        }
+
+        .track-label {
+            font-size: clamp(0.55rem, 0.8vw, 0.7rem);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .track-bar {
+            flex: 1;
+            height: 100%;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .track-bar.video { background: linear-gradient(90deg, rgba(232, 186, 115, 0.25), rgba(232, 186, 115, 0.1)); border: 1px solid rgba(232, 186, 115, 0.3); }
+        .track-bar.music { background: linear-gradient(90deg, rgba(168, 196, 184, 0.25), rgba(168, 196, 184, 0.1)); border: 1px solid rgba(168, 196, 184, 0.3); width: 85%; }
+        .track-bar.subs { background: linear-gradient(90deg, rgba(212, 137, 106, 0.25), rgba(212, 137, 106, 0.1)); border: 1px solid rgba(212, 137, 106, 0.3); width: 70%; }
+        .track-bar.sfx { background: linear-gradient(90deg, rgba(180, 160, 200, 0.25), rgba(180, 160, 200, 0.1)); border: 1px solid rgba(180, 160, 200, 0.3); width: 40%; margin-left: 30%; }
+
+        /* ===========================================
+           END SLIDE
+           =========================================== */
+        .end-slide {
+            text-align: center;
+            background: radial-gradient(ellipse at 50% 60%, rgba(232, 186, 115, 0.05) 0%, transparent 60%),
+                        var(--bg);
+        }
+
+        .end-slide .end-url {
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-weight: 600;
+            color: var(--accent-1);
+            letter-spacing: 0.05em;
+            margin-top: clamp(0.5rem, 1.5vh, 1rem);
+        }
+
+        .end-slide .end-note {
+            font-size: var(--small-size);
+            color: var(--text-dim);
+            margin-top: clamp(1rem, 2vh, 2rem);
+            letter-spacing: 0.06em;
+        }
+
+        /* ===========================================
+           TWO-COLUMN LAYOUT
+           =========================================== */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1.5rem, 3vw, 3rem);
+            align-items: start;
+            margin-top: var(--content-gap);
+        }
+
+        @media (max-width: 700px) {
+            .two-col { grid-template-columns: 1fr; }
+            .arch-layout { grid-template-columns: 1fr !important; }
+        }
+
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.4rem, 1vh, 0.75rem);
+        }
+
+        .bullet-list li {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.5;
+            padding-left: 1.2em;
+            position: relative;
+        }
+
+        .bullet-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6em;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent-1);
+        }
+
+        /* ===========================================
+           RESPONSIVE BREAKPOINTS
+           =========================================== */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(1rem, 3vw, 2.5rem);
+                --content-gap: clamp(0.5rem, 1.5vw, 1.25rem);
+                --title-size: clamp(2rem, 6vw, 3.5rem);
+                --h2-size: clamp(1.25rem, 3.5vw, 2.25rem);
+            }
+        }
+
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+                --content-gap: clamp(0.4rem, 1vw, 0.75rem);
+                --title-size: clamp(1.5rem, 5vw, 2.5rem);
+                --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            }
+            .nav-dots, .keyboard-hint, .decorative, .glow-orb { display: none; }
+        }
+
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2vw, 1rem);
+                --title-size: clamp(1.25rem, 4vw, 2rem);
+                --h2-size: clamp(1rem, 2.5vw, 1.5rem);
+                --body-size: clamp(0.65rem, 1vw, 0.85rem);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            .stats-row { gap: clamp(1rem, 3vw, 2rem); }
+            .pricing-row { flex-direction: column; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="grain-overlay"></div>
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="nav-dots" id="navDots"></nav>
+
+<div class="keyboard-hint">
+    <kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 1: TITLE
+     ═══════════════════════════════════════════ -->
+<section class="slide title-slide" data-slide="0">
+    <div class="glow-orb" style="width: 500px; height: 500px; background: var(--accent-1); top: 20%; left: 50%; transform: translateX(-50%);"></div>
+    <div class="slide-content" style="align-items: center;">
+        <p class="chinese-title reveal">拾 光</p>
+        <h1 class="reveal"><span class="accent-text">Glimmer</span></h1>
+        <p class="tagline reveal">AI-powered memorial video generation. Transform photos into cinematic moments — entirely in the browser.</p>
+        <p class="title-url reveal"><span>glimmer.video</span></p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 2: THE PROBLEM
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="1">
+    <div class="glow-orb" style="width: 400px; height: 400px; background: var(--accent-2); bottom: 10%; right: -5%;"></div>
+    <div class="slide-content">
+        <p class="label reveal">The Problem</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Memorial videos cost thousands <br>and take weeks to produce</h2>
+        <ul class="bullet-list reveal" style="margin-top: var(--content-gap); max-width: 640px;">
+            <li>Professional video production: NT$15,000 – NT$50,000+</li>
+            <li>Turnaround: 1–3 weeks, often too late for the ceremony</li>
+            <li>DIY tools require video editing expertise most families don't have</li>
+            <li>AI video generation exists, but no product stitches it into a final film</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 3: WHAT IS GLIMMER
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="2">
+    <div class="glow-orb" style="width: 350px; height: 350px; background: var(--accent-3); top: 5%; left: -5%;"></div>
+    <div class="slide-content">
+        <p class="label reveal">The Solution</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Upload photos. <span class="accent-text">Get a film.</span></h2>
+        <p class="body-text reveal" style="margin-top: var(--content-gap);">
+            Glimmer transforms your photos into cinematic AI-generated video clips.
+            Select an occasion — memorial, birthday, wedding, or pet tribute — and our
+            multi-provider AI engine generates professional video from each photo with
+            category-aware prompts.
+        </p>
+        <p class="body-text reveal" style="margin-top: 0.75em;">
+            Then edit everything in a browser-based timeline editor with music, subtitles,
+            filters, and title cards. Export the final MP4 right from your browser.
+        </p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 4: KEY FEATURES (AI)
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="3">
+    <div class="slide-content">
+        <p class="label reveal">Core Features</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Multi-Provider AI Engine</h2>
+        <div class="feature-grid reveal">
+            <div class="feature-card">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 16v-4m0 0V8m0 4h4m-4 0H8"/>
+                    <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <h3>Smart Dispatch</h3>
+                <p>Routes to BytePlus Seedance, Google Veo 3.1, or Kling AI based on availability and quality</p>
+            </div>
+            <div class="feature-card">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <h3>Category-Aware Prompts</h3>
+                <p>Person vs. pet, occasion-specific cinematic prompts tuned per provider</p>
+            </div>
+            <div class="feature-card">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="2" y="2" width="20" height="20" rx="2"/>
+                    <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/>
+                </svg>
+                <h3>Multi-Aspect Ratio</h3>
+                <p>16:9 landscape, 9:16 portrait, 1:1 square — match any display or social platform</p>
+            </div>
+            <div class="feature-card">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <h3>Safety Built In</h3>
+                <p>NSFW detection via TensorFlow.js before generation. Rate limiting on all endpoints</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 5: BROWSER EDITOR
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="4">
+    <div class="slide-content">
+        <p class="label reveal">In-Browser Editor</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Timeline editing. <span class="accent-text">No upload needed.</span></h2>
+        <div class="editor-mock reveal-scale">
+            <div class="editor-bar">
+                <span class="editor-dot"></span>
+                <span class="editor-dot"></span>
+                <span class="editor-dot"></span>
+            </div>
+            <div class="timeline-tracks">
+                <div class="track">
+                    <span class="track-label">Video</span>
+                    <div class="track-bar video"></div>
+                </div>
+                <div class="track">
+                    <span class="track-label">Music</span>
+                    <div class="track-bar music"></div>
+                </div>
+                <div class="track">
+                    <span class="track-label">Subs</span>
+                    <div class="track-bar subs"></div>
+                </div>
+                <div class="track">
+                    <span class="track-label">SFX</span>
+                    <div class="track-bar sfx"></div>
+                </div>
+            </div>
+        </div>
+        <div class="two-col reveal" style="margin-top: var(--content-gap);">
+            <ul class="bullet-list">
+                <li>Drag, trim, split, reposition clips</li>
+                <li>6 filter presets (warm, vintage, B&W, vivid)</li>
+            </ul>
+            <ul class="bullet-list">
+                <li>Speed control 0.5x–2x</li>
+                <li>FFmpeg WASM export to MP4 in-browser</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 6: ARCHITECTURE
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="5">
+    <div class="slide-content">
+        <p class="label reveal">Architecture</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Edge-Native. <span class="accent-text">Zero servers.</span></h2>
+        <div class="arch-layout reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:clamp(1.5rem,3vw,2.5rem); align-items:start; margin-top:var(--content-gap);">
+          <div>
+            <div class="arch-diagram">
+            <!-- Tier 1: Browser -->
+            <div class="arch-tier">
+                <div class="tier-icon tier-browser">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                    </svg>
+                </div>
+                <div class="tier-info">
+                    <span class="tier-label">Browser</span>
+                    <span class="tier-desc">Next.js 16 + FFmpeg WASM</span>
+                </div>
+            </div>
+            <!-- Connector -->
+            <div class="arch-connector">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                    <path d="M8 0v14M4 10l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <!-- Tier 2: Edge -->
+            <div class="arch-tier">
+                <div class="tier-icon tier-edge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                </div>
+                <div class="tier-info">
+                    <span class="tier-label">Edge</span>
+                    <span class="tier-desc">Cloudflare Pages &middot; 43 API routes</span>
+                </div>
+            </div>
+            <!-- Connector -->
+            <div class="arch-connector">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                    <path d="M8 0v14M4 10l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <!-- Tier 3: Storage -->
+            <div class="arch-tier">
+                <div class="tier-icon tier-storage">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3"/>
+                        <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                </div>
+                <div class="tier-info">
+                    <span class="tier-label">Storage</span>
+                    <span class="tier-desc">KV for state + R2 for videos</span>
+                </div>
+            </div>
+            <!-- Connector -->
+            <div class="arch-connector">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                    <path d="M8 0v14M4 10l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <!-- Tier 4: AI Providers -->
+            <div class="arch-tier">
+                <div class="tier-icon tier-ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a4 4 0 0 1 4 4v1a3 3 0 0 1 3 3v1a2 2 0 0 1-2 2h-1"/>
+                        <path d="M8 7V6a4 4 0 0 1 4-4"/>
+                        <path d="M5 10a3 3 0 0 1 3-3"/>
+                        <path d="M3 14a2 2 0 0 1 2-2h1"/>
+                        <circle cx="12" cy="17" r="3"/>
+                        <path d="M12 14v-1M9 17H5M19 17h-4"/>
+                    </svg>
+                </div>
+                <div class="tier-info">
+                    <span class="tier-label">AI Providers</span>
+                    <span class="tier-desc">BytePlus Seedance &middot; Google Veo &middot; Kling AI</span>
+                </div>
+            </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:clamp(0.75rem,1.5vh,1rem);">
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:clamp(0.75rem,1.5vw,1.25rem);">
+              <h3 style="font-family:var(--font-display); font-weight:700; font-size:clamp(0.85rem,1.2vw,1rem); color:var(--accent-1); margin-bottom:0.5em;">Client-Driven Polling</h3>
+              <p style="font-size:var(--small-size); color:var(--text-secondary); line-height:1.6;">POST /generate returns a job ID. The browser polls GET /status/[id] — each request checks the external AI provider and updates KV. On completion, videos auto-archive to R2.</p>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:clamp(0.75rem,1.5vw,1.25rem);">
+              <h3 style="font-family:var(--font-display); font-weight:700; font-size:clamp(0.85rem,1.2vw,1rem); color:var(--accent-2); margin-bottom:0.5em;">Edge-First Design</h3>
+              <p style="font-size:var(--small-size); color:var(--text-secondary); line-height:1.6;">All 43 API routes run on Cloudflare Edge Runtime. No Node.js server. FFmpeg WASM handles video export entirely in the browser.</p>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:clamp(0.75rem,1.5vw,1.25rem);">
+              <h3 style="font-family:var(--font-display); font-weight:700; font-size:clamp(0.85rem,1.2vw,1rem); color:var(--accent-3); margin-bottom:0.5em;">Multi-Provider Failover</h3>
+              <p style="font-size:var(--small-size); color:var(--text-secondary); line-height:1.6;">Smart dispatch across BytePlus, Google Veo, and Kling AI. Provider selection is category-aware — person vs. pet, occasion-specific prompts.</p>
+            </div>
+          </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 7: TECH STACK
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="6">
+    <div class="slide-content">
+        <p class="label reveal">Tech Stack</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Built on the Edge</h2>
+        <div class="stack-grid reveal">
+            <div class="stack-item">
+                <span class="stack-cat">Framework</span>
+                <span class="stack-name">Next.js 16 + React 19</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Language</span>
+                <span class="stack-name">TypeScript (strict)</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Hosting</span>
+                <span class="stack-name">Cloudflare Pages</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Storage</span>
+                <span class="stack-name">KV + R2</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Styling</span>
+                <span class="stack-name">Tailwind CSS 4 + shadcn/ui</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Export</span>
+                <span class="stack-name">FFmpeg WASM</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">AI Video</span>
+                <span class="stack-name">BytePlus / Veo / Kling</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Payments</span>
+                <span class="stack-name">ECPay + Stripe</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Email</span>
+                <span class="stack-name">Resend</span>
+            </div>
+            <div class="stack-item">
+                <span class="stack-cat">Monitor</span>
+                <span class="stack-name">Sentry (Edge)</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 8: BUSINESS MODEL
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="7">
+    <div class="slide-content">
+        <p class="label reveal">Business Model</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Pay per video. <span class="accent-text">Not subscriptions.</span></h2>
+        <p class="body-text reveal" style="margin-top: var(--content-gap);">
+            Optimized for event-driven usage in the Taiwan market. Families buy credits when they need them — no monthly waste.
+        </p>
+        <div class="pricing-row reveal">
+            <div class="price-card">
+                <div class="price-name">Free</div>
+                <div class="price-amount">NT$0</div>
+                <div class="price-unit">1 video per email</div>
+            </div>
+            <div class="price-card featured">
+                <div class="price-name">Single</div>
+                <div class="price-amount">NT$499</div>
+                <div class="price-unit">1 credit</div>
+            </div>
+            <div class="price-card">
+                <div class="price-name">5-Pack</div>
+                <div class="price-amount">NT$1,999</div>
+                <div class="price-unit">NT$400 per video</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 9: STATS
+     ═══════════════════════════════════════════ -->
+<section class="slide" data-slide="8">
+    <div class="glow-orb" style="width: 350px; height: 350px; background: var(--accent-1); bottom: 5%; left: -5%;"></div>
+    <div class="slide-content">
+        <p class="label reveal">By the Numbers</p>
+        <h2 class="reveal" style="margin-top: 0.5em;">Shipped & Tested</h2>
+        <div class="stats-row reveal">
+            <div class="stat">
+                <div class="stat-number">25.9K</div>
+                <div class="stat-label">Lines of TypeScript</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">172</div>
+                <div class="stat-label">Git commits</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">51</div>
+                <div class="stat-label">Passing tests</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">43</div>
+                <div class="stat-label">Edge API routes</div>
+            </div>
+        </div>
+        <p class="body-text reveal" style="margin-top: var(--content-gap);">
+            140 source files. 3 AI video providers. Full browser-based editing and export pipeline.
+        </p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 10: END
+     ═══════════════════════════════════════════ -->
+<section class="slide end-slide" data-slide="9">
+    <div class="glow-orb" style="width: 500px; height: 500px; background: var(--accent-2); top: 30%; left: 50%; transform: translateX(-50%);"></div>
+    <div class="slide-content" style="align-items: center;">
+        <p class="label reveal">Try it</p>
+        <h1 class="reveal" style="font-size: var(--h2-size);"><span class="accent-text">拾光 Glimmer</span></h1>
+        <p class="end-url reveal">glimmer.video</p>
+        <p class="end-note reveal">Built by Jazz Lien &middot; 2026</p>
+    </div>
+</section>
+
+<script>
+    /* ===========================================
+       SLIDE PRESENTATION CONTROLLER
+       =========================================== */
+    class SlidePresentation {
+        constructor() {
+            this.slides = document.querySelectorAll('.slide');
+            this.totalSlides = this.slides.length;
+            this.progressBar = document.getElementById('progressBar');
+            this.navDotsContainer = document.getElementById('navDots');
+
+            this.createNavDots();
+            this.setupIntersectionObserver();
+            this.setupKeyboardNav();
+            this.updateProgress(0);
+        }
+
+        createNavDots() {
+            for (let i = 0; i < this.totalSlides; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                dot.addEventListener('click', () => {
+                    this.slides[i].scrollIntoView({ behavior: 'smooth' });
+                });
+                this.navDotsContainer.appendChild(dot);
+            }
+        }
+
+        setupIntersectionObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        const index = parseInt(entry.target.dataset.slide);
+                        this.updateProgress(index);
+                        this.updateNavDots(index);
+                    }
+                });
+            }, { threshold: 0.4 });
+
+            this.slides.forEach(slide => observer.observe(slide));
+        }
+
+        setupKeyboardNav() {
+            let currentSlide = 0;
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    currentSlide = Math.min(currentSlide + 1, this.totalSlides - 1);
+                    this.slides[currentSlide].scrollIntoView({ behavior: 'smooth' });
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    currentSlide = Math.max(currentSlide - 1, 0);
+                    this.slides[currentSlide].scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        updateProgress(index) {
+            const pct = ((index + 1) / this.totalSlides) * 100;
+            this.progressBar.style.width = pct + '%';
+        }
+
+        updateNavDots(index) {
+            const dots = this.navDotsContainer.querySelectorAll('.nav-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+    }
+
+    new SlidePresentation();
+</script>
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jazz Gallery — AI Artwork Gallery</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png" />
+  <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --accent: #7c8cf8;
+      --accent-secondary: #c084fc;
+      --accent-tertiary: #67e8f9;
+      --bg: #0a0a0f;
+      --bg-card: rgba(255,255,255,0.04);
+      --bg-card-hover: rgba(255,255,255,0.07);
+      --text: #e8e8ec;
+      --text-dim: #8a8a9a;
+      --border: rgba(255,255,255,0.06);
+      --font-display: 'Cabinet Grotesk', sans-serif;
+      --font-body: 'General Sans', sans-serif;
+      --slide-pad-x: clamp(2rem, 6vw, 6rem);
+      --slide-pad-y: clamp(1.5rem, 4vh, 3rem);
+    }
+
+    html {
+      scroll-snap-type: y mandatory;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      background: var(--bg);
+      color: var(--text);
+    }
+    body {
+      font-family: var(--font-body);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Grain Overlay ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 128px 128px;
+    }
+
+    /* ─── Progress Bar ─── */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+      z-index: 1000;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ─── Nav Dots ─── */
+    .nav-dots {
+      position: fixed;
+      right: clamp(0.75rem, 2vw, 1.5rem);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .nav-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid var(--text-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 0;
+    }
+    .nav-dot:hover { border-color: var(--accent); }
+    .nav-dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(124,140,248,0.5);
+    }
+
+    /* ─── Slide ─── */
+    .slide {
+      height: 100vh;
+      width: 100vw;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--slide-pad-y) var(--slide-pad-x);
+    }
+
+    /* ─── Glow Orbs ─── */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .orb-1 { width: 400px; height: 400px; background: var(--accent); top: -10%; left: -5%; }
+    .orb-2 { width: 350px; height: 350px; background: var(--accent-secondary); bottom: -10%; right: -5%; }
+    .orb-3 { width: 300px; height: 300px; background: var(--accent-tertiary); top: 50%; left: 60%; transform: translateY(-50%); }
+
+    /* ─── Typography ─── */
+    .slide-label {
+      font-family: var(--font-body);
+      font-size: clamp(0.65rem, 1vw, 0.8rem);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+    }
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
+    }
+    .subtitle {
+      font-size: clamp(0.95rem, 1.8vw, 1.35rem);
+      color: var(--text-dim);
+      max-width: 44ch;
+      line-height: 1.55;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ─── Cards ─── */
+    .card-grid {
+      display: grid;
+      gap: clamp(0.6rem, 1.2vw, 1rem);
+    }
+    .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .card-grid-6 { grid-template-columns: repeat(3, 1fr); }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: clamp(0.8rem, 1.5vw, 1.3rem);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(124,140,248,0.15), transparent, rgba(192,132,252,0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 100%; height: 100%; }
+    .card h3 {
+      font-family: var(--font-display);
+      font-size: clamp(0.8rem, 1.1vw, 1rem);
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .card p {
+      font-size: clamp(0.65rem, 0.85vw, 0.82rem);
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+
+    /* ─── Bullet List ─── */
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.5rem, 1vh, 0.75rem);
+    }
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: clamp(0.8rem, 1.2vw, 1.05rem);
+      color: var(--text);
+    }
+    .bullet-list .bullet-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: var(--accent);
+    }
+
+    /* ─── Tech Grid ─── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(0.5rem, 1vw, 0.8rem);
+    }
+    .tech-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: clamp(0.6rem, 1vw, 1rem) clamp(0.5rem, 0.8vw, 0.8rem);
+      text-align: center;
+      font-size: clamp(0.7rem, 0.95vw, 0.88rem);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .tech-chip:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(124,140,248,0.3);
+    }
+    .tech-chip .chip-label { color: var(--text-dim); font-size: clamp(0.55rem, 0.7vw, 0.68rem); display: block; margin-top: 2px; }
+
+    /* ─── Stat Cards ─── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(0.6rem, 1.2vw, 1rem);
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: clamp(1rem, 2vw, 1.8rem);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(124,140,248,0.2), transparent, rgba(103,232,249,0.15));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .stat-label {
+      font-size: clamp(0.65rem, 0.9vw, 0.85rem);
+      color: var(--text-dim);
+    }
+
+    /* ─── Architecture Diagram ─── */
+    .arch-row {
+      display: flex;
+      gap: clamp(0.5rem, 1vw, 1rem);
+      align-items: stretch;
+    }
+    .arch-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.4rem, 0.8vh, 0.6rem);
+    }
+    .arch-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: clamp(0.6rem, 1vw, 1rem);
+    }
+    .arch-block h4 {
+      font-family: var(--font-display);
+      font-size: clamp(0.7rem, 0.95vw, 0.88rem);
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--accent);
+    }
+    .arch-block p, .arch-block ul {
+      font-size: clamp(0.6rem, 0.8vw, 0.75rem);
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+    .arch-block ul { list-style: none; }
+    .arch-block ul li::before { content: '\2022'; color: var(--accent-secondary); margin-right: 0.4em; }
+    .arch-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.25rem;
+      flex-shrink: 0;
+    }
+    .arch-connector svg { width: 24px; height: 24px; color: var(--text-dim); }
+
+    /* ─── Tag / Badge ─── */
+    .tag {
+      display: inline-block;
+      padding: 0.2em 0.65em;
+      border-radius: 6px;
+      font-size: clamp(0.6rem, 0.8vw, 0.75rem);
+      font-weight: 600;
+      background: rgba(124,140,248,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(124,140,248,0.2);
+    }
+
+    /* ─── Footer ─── */
+    .slide-footer {
+      position: absolute;
+      bottom: clamp(0.75rem, 2vh, 1.5rem);
+      left: var(--slide-pad-x);
+      font-size: clamp(0.55rem, 0.75vw, 0.7rem);
+      color: var(--text-dim);
+      opacity: 0.5;
+    }
+
+    /* ─── Animations ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── Title Slide Specifics ─── */
+    .title-slide { justify-content: center; align-items: flex-start; }
+    .title-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35em 1em;
+      border-radius: 999px;
+      background: rgba(124,140,248,0.08);
+      border: 1px solid rgba(124,140,248,0.2);
+      font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: clamp(0.75rem, 2vh, 1.25rem);
+    }
+    .title-badge svg { width: 14px; height: 14px; }
+
+    /* ─── End Slide ─── */
+    .end-slide {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .end-line {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      margin: 1rem auto;
+      border-radius: 2px;
+    }
+
+    /* ─── Responsive: Short Viewports ─── */
+    @media (max-height: 700px) {
+      h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+      h2 { font-size: clamp(1.4rem, 3vw, 2.2rem); margin-bottom: 0.6rem; }
+      .subtitle { font-size: clamp(0.8rem, 1.4vw, 1rem); }
+      .card { padding: clamp(0.5rem, 1vw, 0.8rem); }
+      .card-icon { width: 24px; height: 24px; margin-bottom: 0.3rem; }
+      .card h3 { font-size: clamp(0.7rem, 0.95vw, 0.85rem); }
+      .card p { font-size: clamp(0.55rem, 0.75vw, 0.7rem); }
+      .stat-number { font-size: clamp(1.5rem, 3vw, 2.5rem); }
+    }
+    @media (max-height: 600px) {
+      h1 { font-size: clamp(1.6rem, 4vw, 2.8rem); }
+      h2 { font-size: clamp(1.2rem, 2.5vw, 1.8rem); margin-bottom: 0.4rem; }
+      .slide-label { margin-bottom: 0.3rem; }
+      .card-grid { gap: 0.4rem; }
+      .tech-grid { gap: 0.35rem; }
+      .bullet-list { gap: 0.35rem; }
+      .bullet-list li { font-size: clamp(0.7rem, 1vw, 0.85rem); }
+    }
+    @media (max-height: 500px) {
+      .slide { padding: 1rem var(--slide-pad-x); }
+      h1 { font-size: clamp(1.4rem, 3.5vw, 2.2rem); }
+      h2 { font-size: clamp(1rem, 2vw, 1.5rem); }
+      .card-icon { width: 18px; height: 18px; }
+    }
+
+    /* ─── Responsive: Narrow Screens ─── */
+    @media (max-width: 768px) {
+      .card-grid-3, .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .card-grid-6 { grid-template-columns: repeat(2, 1fr); }
+      .tech-grid { grid-template-columns: repeat(3, 1fr); }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .arch-row { flex-direction: column; }
+      .arch-connector { transform: rotate(90deg); padding: 0.25rem 0; }
+      .nav-dots { display: none; }
+    }
+    @media (max-width: 480px) {
+      .card-grid-3, .card-grid-4, .card-grid-6 { grid-template-columns: 1fr; }
+      .tech-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ─── Reduced Motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .progress-bar { transition: none; }
+      .card { transition: none; }
+      .tech-chip { transition: none; }
+      .nav-dot { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar" style="width: 0%"></div>
+
+<!-- Nav Dots -->
+<nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 1: Title -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide title-slide" data-slide="0">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="title-badge reveal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+    AI Artwork Gallery
+  </div>
+
+  <h1 class="reveal reveal-delay-1"><span class="gradient-text">Jazz Gallery</span></h1>
+
+  <p class="subtitle reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem);">
+    A curated AI artwork gallery with authentication, admin dashboard, and community submissions. Live on Render.com.
+  </p>
+
+  <div class="reveal reveal-delay-3" style="margin-top: clamp(1rem, 2.5vh, 2rem); display: flex; gap: 0.6rem; flex-wrap: wrap;">
+    <span class="tag">React 19</span>
+    <span class="tag">FastAPI</span>
+    <span class="tag">Firestore</span>
+    <span class="tag">JWT Auth</span>
+  </div>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 2: The Concept -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="1">
+  <div class="orb orb-3" style="opacity: 0.1;"></div>
+
+  <p class="slide-label reveal">The Concept</p>
+  <h2 class="reveal reveal-delay-1">A luxury-styled gallery<br/>for <span class="gradient-text">AI-generated art</span></h2>
+
+  <ul class="bullet-list reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem); max-width: 640px;">
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7l2 2h9v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Public browsing with category filtering across 8 genres
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Likes, favorites, and full-screen modal viewer
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Community artwork submissions with admin approval workflow
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+      Masonry grid layout with cinematic dark design
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Role-based access with JWT authentication
+    </li>
+  </ul>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 3: Key Features -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="2">
+  <div class="orb orb-1" style="left: auto; right: -5%; top: -5%;"></div>
+
+  <p class="slide-label reveal">Key Features</p>
+  <h2 class="reveal reveal-delay-1">Everything you need to<br/><span class="gradient-text">curate and share</span></h2>
+
+  <div class="card-grid card-grid-3 reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem);">
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      <h3>Masonry Grid</h3>
+      <p>8 categories: Surreal, Portrait, Landscape, Abstract, Anime, Cinematic, Experimental, Narrative</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <h3>Like / Favorite</h3>
+      <p>Persistent like and favorite system across sessions for logged-in users</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></div>
+      <h3>Community Submissions</h3>
+      <p>Users submit artwork for admin review and approval before publishing</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+      <h3>Batch Upload</h3>
+      <p>Upload up to 50 images at once with spreadsheet-style metadata editor</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
+      <h3>Background Removal</h3>
+      <p>Built-in rembg tool for removing image backgrounds server-side</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h3>Password Reset</h3>
+      <p>Secure password reset flow via email with token-based verification</p>
+    </div>
+
+  </div>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 4: Architecture -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="3">
+  <div class="orb orb-2" style="bottom: auto; top: -8%; right: 20%;"></div>
+
+  <p class="slide-label reveal">Architecture</p>
+  <h2 class="reveal reveal-delay-1">Full-stack <span class="gradient-text">cloud-native</span> design</h2>
+
+  <div class="arch-row reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem); width: 100%;">
+
+    <div class="arch-col">
+      <div class="arch-block" style="min-width: 0; padding: clamp(0.8rem, 1.2vw, 1.2rem);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.4rem; display: block;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        <h4>Frontend</h4>
+        <ul>
+          <li>React 19 + TypeScript</li>
+          <li>Vite build tooling</li>
+          <li>Tailwind CSS + Framer Motion</li>
+          <li>Zod schema validation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="arch-connector">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </div>
+
+    <div class="arch-col">
+      <div class="arch-block" style="min-width: 0; padding: clamp(0.8rem, 1.2vw, 1.2rem);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.4rem; display: block;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <h4>Backend API</h4>
+        <ul>
+          <li>FastAPI (Python)</li>
+          <li>JWT: 15-min access + 7-day refresh</li>
+          <li>httpOnly cookies + auto-refresh</li>
+          <li>Roles: Admin, Editor, Viewer</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="arch-connector">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </div>
+
+    <div class="arch-col">
+      <div class="arch-block" style="min-width: 0; padding: clamp(0.8rem, 1.2vw, 1.2rem);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.4rem; display: block;"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <h4>Data Layer</h4>
+        <ul>
+          <li>Google Cloud Firestore</li>
+          <li>Google Cloud Storage</li>
+          <li>Resend (email)</li>
+        </ul>
+      </div>
+      <div class="arch-block" style="margin-top: clamp(0.3rem, 0.6vh, 0.5rem); min-width: 0; padding: clamp(0.8rem, 1.2vw, 1.2rem);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.4rem; display: block;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        <h4>Deployment</h4>
+        <p>Render.com (frontend + backend)</p>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="reveal reveal-delay-3" style="margin-top: clamp(0.5rem, 1vh, 0.75rem); font-size: clamp(0.6rem, 0.85vw, 0.78rem); color: var(--text-dim); font-family: var(--font-body); font-weight: 500; letter-spacing: 0.04em; text-align: center; width: 100%;">
+    Browser → React SPA → FastAPI REST → Firestore + GCS
+  </p>
+
+  <img class="reveal reveal-delay-4" src="../thumbnails/Screenshot - J Gallery.png" alt="Jazz Gallery architecture" style="margin-top:clamp(0.3rem,0.5vh,0.5rem); max-height:22vh; width:auto; max-width:100%; border-radius:8px; border:1px solid rgba(255,255,255,0.06); object-fit:contain;">
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 5: Tech Stack -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="4">
+  <div class="orb orb-3" style="top: 10%; left: -5%;"></div>
+
+  <p class="slide-label reveal">Tech Stack</p>
+  <h2 class="reveal reveal-delay-1">Built with <span class="gradient-text">modern tools</span></h2>
+
+  <div class="tech-grid reveal reveal-delay-2" style="margin-top: clamp(0.75rem, 2vh, 1.5rem); max-width: 720px;">
+    <div class="tech-chip">React 19<span class="chip-label">UI Framework</span></div>
+    <div class="tech-chip">TypeScript<span class="chip-label">Type Safety</span></div>
+    <div class="tech-chip">Vite<span class="chip-label">Build Tool</span></div>
+    <div class="tech-chip">Tailwind 4<span class="chip-label">Styling</span></div>
+    <div class="tech-chip">Framer Motion<span class="chip-label">Animation</span></div>
+    <div class="tech-chip">FastAPI<span class="chip-label">Backend</span></div>
+    <div class="tech-chip">Firestore<span class="chip-label">Database</span></div>
+    <div class="tech-chip">GCS<span class="chip-label">File Storage</span></div>
+    <div class="tech-chip">JWT / bcrypt<span class="chip-label">Auth</span></div>
+    <div class="tech-chip">Resend<span class="chip-label">Email</span></div>
+    <div class="tech-chip">Zod<span class="chip-label">Validation</span></div>
+    <div class="tech-chip">rembg<span class="chip-label">BG Removal</span></div>
+  </div>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 6: Admin Dashboard -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="5">
+  <div class="orb orb-1" style="top: auto; bottom: -10%; left: 30%;"></div>
+
+  <p class="slide-label reveal">Admin Dashboard</p>
+  <h2 class="reveal reveal-delay-1">Complete <span class="gradient-text">content management</span></h2>
+
+  <div class="card-grid card-grid-3 reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem);">
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+      <h3>Stats Widgets</h3>
+      <p>Real-time analytics on artworks, users, and engagement</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+      <h3>CRUD Artworks</h3>
+      <p>Create, read, update, and delete artworks with full metadata</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
+      <h3>Category Management</h3>
+      <p>Organize artworks across 8 curated genre categories</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3>Submissions Review</h3>
+      <p>Approve or reject community-submitted artworks</p>
+    </div>
+
+    <div class="card">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <h3>User Management</h3>
+      <p>Manage roles, contacts viewer, newsletter signups</p>
+    </div>
+
+  </div>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 7: Security -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="6">
+  <div class="orb orb-2" style="top: 20%; right: -8%;"></div>
+
+  <p class="slide-label reveal">Security</p>
+  <h2 class="reveal reveal-delay-1">Production-grade <span class="gradient-text">security</span></h2>
+
+  <ul class="bullet-list reveal reveal-delay-2" style="margin-top: clamp(0.5rem, 1.5vh, 1rem); max-width: 600px;">
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      bcrypt password hashing with 12 rounds
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      JWT stored in httpOnly cookies (no XSS exposure)
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Rate limiting via SlowAPI on all endpoints
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      CORS configured for allowed origins only
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Strict TypeScript throughout frontend codebase
+    </li>
+    <li>
+      <svg class="bullet-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      52 passing tests covering auth, API, and UI flows
+    </li>
+  </ul>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 8: Stats -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide" data-slide="7">
+  <div class="orb orb-1" style="top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.1;"></div>
+
+  <p class="slide-label reveal">By The Numbers</p>
+  <h2 class="reveal reveal-delay-1">Project <span class="gradient-text">at a glance</span></h2>
+
+  <div class="stat-grid reveal reveal-delay-2" style="margin-top: clamp(1rem, 3vh, 2.5rem); max-width: 720px;">
+
+    <div class="stat-card">
+      <div class="stat-number gradient-text">52</div>
+      <div class="stat-label">Tests Passing</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-number gradient-text">8</div>
+      <div class="stat-label">Art Categories</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-number gradient-text">50</div>
+      <div class="stat-label">Batch Upload Limit</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-number gradient-text">3</div>
+      <div class="stat-label">Auth Roles</div>
+    </div>
+
+  </div>
+
+  <div class="slide-footer">Jazz Gallery / Jazz Lien / 2026</div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 9: End -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="slide end-slide" data-slide="8">
+  <div class="orb orb-1" style="top: 30%; left: 20%;"></div>
+  <div class="orb orb-2" style="top: 40%; right: 15%;"></div>
+
+  <div class="reveal">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+  </div>
+
+  <h1 class="reveal reveal-delay-1" style="margin-top: 1rem;"><span class="gradient-text">Jazz Gallery</span></h1>
+
+  <div class="end-line reveal reveal-delay-2"></div>
+
+  <p class="subtitle reveal reveal-delay-2" style="text-align: center; margin-top: 0.5rem;">
+    Built by Jazz Lien
+  </p>
+  <p class="reveal reveal-delay-3" style="color: var(--text-dim); font-size: clamp(0.7rem, 1vw, 0.85rem); margin-top: 0.5rem;">
+    2026
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- JavaScript -->
+<!-- ════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progressBar');
+  const navDotsContainer = document.getElementById('navDots');
+
+  // Build nav dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navDotsContainer.appendChild(dot);
+  });
+
+  const navDots = document.querySelectorAll('.nav-dot');
+
+  // Intersection Observer for reveals + active tracking
+  let currentSlide = 0;
+
+  const slideObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const idx = Number(entry.target.dataset.slide);
+          currentSlide = idx;
+
+          // Update progress
+          const pct = ((idx + 1) / totalSlides) * 100;
+          progressBar.style.width = pct + '%';
+
+          // Update dots
+          navDots.forEach((d, i) => d.classList.toggle('active', i === idx));
+
+          // Reveal children
+          entry.target.querySelectorAll('.reveal').forEach((el) => {
+            el.classList.add('visible');
+          });
+        }
+      });
+    },
+    { threshold: 0.45 }
+  );
+
+  slides.forEach((s) => slideObserver.observe(s));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      const next = Math.min(currentSlide + 1, totalSlides - 1);
+      slides[next].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prev = Math.max(currentSlide - 1, 0);
+      slides[prev].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Trigger first slide reveals on load
+  slides[0].querySelectorAll('.reveal').forEach((el) => el.classList.add('visible'));
+})();
+</script>
+</body>
+</html>

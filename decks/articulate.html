@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Articulate — Etymology-Based Vocabulary Learning</title>
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --primary: #4ade80;
+  --secondary: #2dd4bf;
+  --tertiary: #a78bfa;
+  --bg: #0a0f0d;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
+  --text: #e8efe8;
+  --text-dim: #8a9b8a;
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+  --grain-opacity: 0.035;
+}
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; overflow-x: hidden; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; }
+
+/* ── Grain Overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  opacity: var(--grain-opacity);
+}
+
+/* ── Slides ── */
+.slide {
+  width: 100vw; height: 100vh;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+/* ── Glow Orbs ── */
+.orb {
+  position: absolute; border-radius: 50%; filter: blur(100px);
+  pointer-events: none; opacity: 0.15; z-index: 0;
+}
+.orb-green { background: var(--primary); width: 400px; height: 400px; }
+.orb-teal { background: var(--secondary); width: 350px; height: 350px; }
+.orb-purple { background: var(--tertiary); width: 300px; height: 300px; }
+
+.slide > *:not(.orb) { position: relative; z-index: 1; }
+
+/* ── Typography ── */
+h1 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em; }
+h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; }
+h3 { font-family: var(--font-display); font-weight: 700; }
+p, li, span { font-family: var(--font-body); }
+
+.title-hero {
+  font-size: clamp(3rem, 8vw, 7rem);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.subtitle { font-size: clamp(1rem, 2vw, 1.5rem); color: var(--text-dim); font-weight: 400; margin-top: 0.5rem; }
+.section-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: clamp(1rem, 2vh, 2rem);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.section-subtitle {
+  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+  color: var(--text-dim); margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+  max-width: 600px; text-align: center;
+}
+
+/* ── Cards Grid ── */
+.cards { display: grid; gap: clamp(0.75rem, 1.5vw, 1.25rem); width: 100%; max-width: 1000px; }
+.cards-2 { grid-template-columns: repeat(2, 1fr); }
+.cards-3 { grid-template-columns: repeat(3, 1fr); }
+.cards-4 { grid-template-columns: repeat(2, 1fr); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: clamp(1rem, 2vw, 1.75rem);
+  transition: background 0.3s, transform 0.3s, border-color 0.3s;
+}
+.card:hover { background: var(--bg-card-hover); transform: translateY(-2px); border-color: rgba(74,222,128,0.15); }
+.card-icon {
+  width: clamp(32px, 4vw, 44px); height: clamp(32px, 4vw, 44px);
+  margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+  color: var(--primary);
+}
+.card h3 { font-size: clamp(0.95rem, 1.5vw, 1.2rem); margin-bottom: 0.35rem; }
+.card p { font-size: clamp(0.75rem, 1.2vw, 0.9rem); color: var(--text-dim); line-height: 1.5; }
+
+/* ── Stats Row ── */
+.stats-row {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  margin-top: clamp(1rem, 2vh, 2rem);
+}
+.stat { text-align: center; }
+.stat-value {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label { font-size: clamp(0.7rem, 1vw, 0.85rem); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem; }
+
+/* ── Bullet List ── */
+.bullet-list { list-style: none; max-width: 700px; width: 100%; }
+.bullet-list li {
+  font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+  padding: clamp(0.5rem, 1vh, 0.75rem) 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.bullet-list li:last-child { border-bottom: none; }
+.bullet-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary);
+}
+.bullet-dot.teal { background: var(--secondary); }
+.bullet-dot.purple { background: var(--tertiary); }
+.bullet-list .highlight { color: var(--primary); font-weight: 600; }
+
+/* ── Tag Cloud ── */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; max-width: 800px; margin-top: clamp(0.75rem, 1.5vh, 1.25rem); }
+.tag {
+  font-size: clamp(0.65rem, 1vw, 0.8rem);
+  padding: 0.3rem 0.75rem; border-radius: 999px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim); white-space: nowrap;
+}
+.tag.accent { border-color: rgba(74,222,128,0.2); color: var(--primary); }
+
+/* ── Philosophy Equation ── */
+.equation {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  background: linear-gradient(135deg, var(--primary), var(--tertiary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: clamp(0.5rem, 2vh, 1.5rem) 0;
+}
+.philosophy-text {
+  font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+  color: var(--text-dim); text-align: center;
+  max-width: 580px; line-height: 1.7;
+}
+
+/* ── Gamification Badges ── */
+.badge-row {
+  display: flex; gap: clamp(0.5rem, 1.5vw, 1rem);
+  flex-wrap: wrap; justify-content: center;
+  margin: clamp(0.75rem, 1.5vh, 1.25rem) 0;
+}
+.badge {
+  font-size: clamp(0.65rem, 1vw, 0.8rem);
+  padding: 0.35rem 0.85rem; border-radius: 999px;
+  font-weight: 600; letter-spacing: 0.02em;
+}
+.badge-green { background: rgba(74,222,128,0.12); color: var(--primary); border: 1px solid rgba(74,222,128,0.2); }
+.badge-teal { background: rgba(45,212,191,0.12); color: var(--secondary); border: 1px solid rgba(45,212,191,0.2); }
+.badge-purple { background: rgba(167,139,250,0.12); color: var(--tertiary); border: 1px solid rgba(167,139,250,0.2); }
+
+/* ── Architecture Diagram (vertical stacked) ── */
+.arch-diagram {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; margin-top: clamp(0.5rem, 1vh, 1rem);
+}
+.arch-tier {
+  display: flex; align-items: center; gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: clamp(0.6rem, 1.2vw, 0.9rem) clamp(1rem, 2vw, 1.75rem);
+  width: 100%; max-width: none;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* ── Architecture Grid (two-column) ── */
+.arch-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 3vw, 2.5rem); align-items: start;
+  margin-top: var(--content-gap, clamp(1rem, 2vh, 1.5rem));
+  width: 100%; max-width: 1000px;
+}
+.arch-details { display: flex; flex-direction: column; gap: clamp(0.5rem, 1vw, 0.75rem); }
+.arch-detail-card {
+  background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: clamp(0.7rem, 1.4vw, 1rem) clamp(1rem, 1.8vw, 1.25rem);
+  transition: background 0.3s, border-color 0.3s;
+}
+.arch-detail-card:hover { background: var(--bg-card-hover); }
+.arch-detail-card h4 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem); margin-bottom: 0.2rem;
+}
+.arch-detail-card p {
+  font-size: clamp(0.65rem, 1vw, 0.8rem); color: var(--text-dim); line-height: 1.5;
+}
+.arch-tier:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.12); }
+.tier-icon {
+  flex-shrink: 0; width: clamp(36px, 4vw, 44px); height: clamp(36px, 4vw, 44px);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+}
+.tier-icon svg { width: 20px; height: 20px; stroke-width: 1.8; }
+.tier-text { display: flex; flex-direction: column; }
+.tier-label {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem); color: var(--text);
+}
+.tier-desc {
+  font-size: clamp(0.65rem, 1vw, 0.8rem); color: var(--text-dim);
+  line-height: 1.4; margin-top: 0.1rem;
+}
+.arch-down-arrow {
+  display: flex; align-items: center; justify-content: center;
+  height: clamp(18px, 2.5vh, 28px); color: var(--text-dim); opacity: 0.5;
+}
+.arch-down-arrow svg { width: 16px; height: 16px; }
+
+/* Legacy arch-flow (kept for compat) */
+.arch-flow {
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(0.5rem, 1.5vw, 1rem); flex-wrap: wrap;
+  margin-top: clamp(0.75rem, 1.5vh, 1.25rem);
+}
+.arch-box {
+  background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: clamp(0.6rem, 1.2vw, 1rem) clamp(0.8rem, 1.5vw, 1.25rem);
+  font-size: clamp(0.7rem, 1.1vw, 0.85rem); font-weight: 500;
+  text-align: center;
+}
+.arch-arrow { color: var(--text-dim); font-size: clamp(0.8rem, 1.2vw, 1rem); }
+
+/* ── Progress Bar ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 10000;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: width 0.3s ease;
+}
+
+/* ── Nav Dots ── */
+.nav-dots {
+  position: fixed; right: clamp(0.75rem, 2vw, 1.5rem); top: 50%;
+  transform: translateY(-50%); z-index: 10000;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.nav-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  border: none; padding: 0;
+}
+.nav-dot.active { background: var(--primary); transform: scale(1.3); }
+.nav-dot:hover { background: rgba(74,222,128,0.5); }
+
+/* ── Slide number ── */
+.slide-number {
+  position: fixed; bottom: clamp(0.75rem, 2vw, 1.5rem); right: clamp(0.75rem, 2vw, 1.5rem);
+  font-size: clamp(0.65rem, 1vw, 0.8rem); color: var(--text-dim); z-index: 10000;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: 0.05em;
+}
+
+/* ── Animations ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ── End Slide Divider ── */
+.end-divider {
+  width: 60px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  margin: clamp(0.75rem, 1.5vh, 1.25rem) 0;
+}
+
+/* ── Responsive: max-height ── */
+@media (max-height: 700px) {
+  .slide { padding: clamp(1rem, 3vw, 2.5rem); }
+  .section-title { margin-bottom: clamp(0.5rem, 1vh, 1rem); }
+  .section-subtitle { margin-bottom: clamp(0.75rem, 1.5vh, 1.25rem); }
+  .card { padding: clamp(0.75rem, 1.5vw, 1.25rem); }
+  .card-icon { width: 28px; height: 28px; margin-bottom: 0.35rem; }
+}
+@media (max-height: 600px) {
+  .title-hero { font-size: clamp(2.5rem, 6vw, 4rem); }
+  .equation { font-size: clamp(2rem, 5vw, 3rem); }
+  .card h3 { font-size: clamp(0.8rem, 1.2vw, 1rem); }
+  .card p { font-size: clamp(0.65rem, 1vw, 0.8rem); }
+  .stats-row { gap: clamp(0.75rem, 2vw, 1.5rem); }
+  .stat-value { font-size: clamp(1.5rem, 3vw, 2.5rem); }
+}
+@media (max-height: 500px) {
+  .section-subtitle { display: none; }
+  .bullet-list li { padding: 0.3rem 0; font-size: clamp(0.75rem, 1.2vw, 0.9rem); }
+  .card { padding: clamp(0.5rem, 1vw, 0.75rem); }
+}
+
+/* ── Responsive: width ── */
+@media (max-width: 768px) {
+  .cards-2, .cards-3, .cards-4 { grid-template-columns: 1fr 1fr; }
+  .nav-dots { right: 0.5rem; }
+  .arch-flow { gap: 0.35rem; }
+}
+@media (max-width: 700px) {
+  .arch-grid { grid-template-columns: 1fr; }
+  #slide-2 [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 480px) {
+  .cards-3 { grid-template-columns: 1fr; }
+  .stats-row { gap: 1rem; }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .card { transition: none; }
+  .nav-dot { transition: none; }
+  .progress-bar { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar" style="width: 0%"></div>
+
+<!-- Nav Dots -->
+<nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+<!-- Slide Number -->
+<div class="slide-number" id="slideNumber">01 / 09</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 1 — Title
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-1">
+  <div class="orb orb-green" style="top:-10%;left:-10%"></div>
+  <div class="orb orb-teal" style="bottom:-15%;right:-8%"></div>
+  <div class="orb orb-purple" style="top:40%;right:-20%"></div>
+
+  <div style="text-align:center">
+    <div class="reveal" style="margin-bottom:clamp(0.5rem,1vh,1rem)">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <defs><linearGradient id="iconGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#2dd4bf"/></linearGradient></defs>
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+    </div>
+    <h1 class="title-hero reveal reveal-delay-1">Articulate</h1>
+    <p class="subtitle reveal reveal-delay-2" style="max-width:520px;margin:clamp(0.75rem,1.5vh,1.5rem) auto 0">Gamified vocabulary learning through etymology. Small daily gains, compounding results.</p>
+    <div class="tag-cloud reveal reveal-delay-4" style="margin-top:clamp(1rem,2vh,2rem)">
+      <span class="tag accent">React Native</span>
+      <span class="tag accent">Expo</span>
+      <span class="tag">TypeScript</span>
+      <span class="tag">Etymology</span>
+      <span class="tag">Spaced Repetition</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 2 — Philosophy
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-2">
+  <div class="orb orb-purple" style="top:-15%;right:10%"></div>
+  <div class="orb orb-green" style="bottom:-10%;left:-5%"></div>
+
+  <h2 class="section-title reveal">The Philosophy</h2>
+
+  <div class="reveal reveal-delay-1" style="display:grid; grid-template-columns:1fr 1fr; gap:clamp(1.5rem,3vw,2.5rem); align-items:center; margin-top:clamp(0.5rem,1vh,0.75rem); width:100%;">
+
+    <!-- Left: message -->
+    <div>
+      <div class="equation" style="text-align:left; margin-bottom:clamp(0.5rem,1vh,0.75rem);">1.01<sup style="font-size:60%">365</sup> = 37.78</div>
+      <p class="philosophy-text reveal reveal-delay-2" style="text-align:left; max-width:none;">Inspired by <strong style="color:var(--text)">Atomic Habits</strong> — tiny daily gains <strong style="color:var(--primary)">compound</strong>, not add. 1% better each day isn't +3.65 after a year. It's <strong style="color:var(--primary)">37.78x</strong>.</p>
+      <p class="philosophy-text reveal reveal-delay-3" style="text-align:left; max-width:none; margin-top:clamp(0.5rem,1vh,0.75rem);">Gamification makes you <strong style="color:var(--tertiary)">show up</strong>. Etymology makes it <strong style="color:var(--secondary)">stick</strong>. The chart tells the rest.</p>
+      <div class="badge-row reveal reveal-delay-4" style="justify-content:flex-start; margin-top:clamp(0.75rem,1.5vh,1rem);">
+        <span class="badge badge-green">Gamified consistency</span>
+        <span class="badge badge-teal">Etymology-powered</span>
+        <span class="badge badge-purple">Compounding gains</span>
+      </div>
+    </div>
+
+    <!-- Right: compound vs linear chart -->
+    <div class="reveal reveal-delay-2" style="position:relative;">
+      <svg viewBox="0 0 320 240" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Grid lines -->
+        <line x1="40" y1="20" x2="40" y2="200" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <line x1="40" y1="200" x2="300" y2="200" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <line x1="40" y1="155" x2="300" y2="155" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="40" y1="110" x2="300" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="40" y1="65" x2="300" y2="65" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="40" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis labels -->
+        <text x="36" y="203" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">1x</text>
+        <text x="36" y="158" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">10x</text>
+        <text x="36" y="113" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">20x</text>
+        <text x="36" y="68" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">30x</text>
+        <text x="36" y="25" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">37.78x</text>
+
+        <!-- X-axis labels -->
+        <text x="40" y="218" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">Day 0</text>
+        <text x="105" y="218" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">90</text>
+        <text x="170" y="218" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">180</text>
+        <text x="235" y="218" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">270</text>
+        <text x="300" y="218" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="General Sans, sans-serif">365</text>
+
+        <!-- Linear line: 1 + 0.01*day, scaled so 37.78 maps to y=20, 1 maps to y=200 -->
+        <!-- At day 365: 1 + 3.65 = 4.65 → y = 200 - (3.65/36.78)*180 = 200 - 17.9 ≈ 182 -->
+        <line x1="40" y1="200" x2="300" y2="182" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-dasharray="6 4"/>
+
+        <!-- Compound curve: 1.01^day, plotted as polyline -->
+        <!-- Key points: d0=1, d30=1.35, d60=1.82, d90=2.45, d120=3.30, d150=4.45, d180=6.00, d210=8.10, d240=10.89, d270=14.69, d300=19.79, d330=26.66, d365=37.78 -->
+        <!-- x = 40 + (day/365)*260, y = 200 - ((val-1)/36.78)*180 -->
+        <polyline
+          points="40,200 61,198 83,196 105,193 126,189 148,183 170,175 191,165 213,151 234,133 256,108 277,74 300,20"
+          fill="none" stroke="url(#chartGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Gradient fill under curve -->
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="320" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4ade80"/>
+            <stop offset="100%" stop-color="#2dd4bf"/>
+          </linearGradient>
+          <linearGradient id="chartFill" x1="160" y1="20" x2="160" y2="200" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4ade80" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#4ade80" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <polygon
+          points="40,200 61,198 83,196 105,193 126,189 148,183 170,175 191,165 213,151 234,133 256,108 277,74 300,20 300,200"
+          fill="url(#chartFill)"/>
+
+        <!-- End dot on compound curve -->
+        <circle cx="300" cy="20" r="4" fill="#4ade80"/>
+
+        <!-- 37.78x label -->
+        <text x="295" y="14" text-anchor="end" fill="#4ade80" font-size="11" font-weight="700" font-family="Cabinet Grotesk, sans-serif">37.78x</text>
+
+        <!-- Linear label -->
+        <text x="295" y="178" text-anchor="end" fill="rgba(255,255,255,0.35)" font-size="9" font-family="General Sans, sans-serif">linear: 4.65x</text>
+
+        <!-- Legend -->
+        <line x1="50" y1="232" x2="66" y2="232" stroke="url(#chartGrad)" stroke-width="2"/>
+        <text x="70" y="235" fill="rgba(255,255,255,0.5)" font-size="8.5" font-family="General Sans, sans-serif">1% daily (compound)</text>
+        <line x1="175" y1="232" x2="191" y2="232" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="195" y="235" fill="rgba(255,255,255,0.35)" font-size="8.5" font-family="General Sans, sans-serif">1% daily (linear)</text>
+      </svg>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 3 — Content Scale
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-3">
+  <div class="orb orb-teal" style="top:10%;left:-12%"></div>
+  <div class="orb orb-green" style="bottom:-10%;right:-10%"></div>
+
+  <h2 class="section-title reveal">Content Scale</h2>
+  <p class="section-subtitle reveal reveal-delay-1">All definitions, examples, and fun facts are original content</p>
+
+  <div class="stats-row reveal reveal-delay-2">
+    <div class="stat">
+      <div class="stat-value">1,005</div>
+      <div class="stat-label">Words</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">19</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">215</div>
+      <div class="stat-label">Roots Mapped</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">16</div>
+      <div class="stat-label">Synonym Groups</div>
+    </div>
+  </div>
+
+  <div class="badge-row reveal reveal-delay-3" style="margin-top:clamp(1.25rem,2.5vh,2rem)">
+    <span class="badge badge-green">Latin Roots</span>
+    <span class="badge badge-teal">Greek Roots</span>
+    <span class="badge badge-purple">Bilingual EN + ZH</span>
+  </div>
+  <p class="reveal reveal-delay-4" style="font-size:clamp(0.75rem,1.1vw,0.9rem);color:var(--text-dim);margin-top:clamp(0.5rem,1vh,0.75rem)">English + Traditional Chinese (&#32321;&#39636;&#20013;&#25991;)</p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 4 — Four Main Screens
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-4">
+  <div class="orb orb-green" style="top:-8%;right:-15%"></div>
+  <div class="orb orb-purple" style="bottom:-12%;left:5%"></div>
+
+  <h2 class="section-title reveal">Four Main Screens</h2>
+  <p class="section-subtitle reveal reveal-delay-1">Core navigation built around daily learning flow</p>
+
+  <div class="cards cards-4 reveal reveal-delay-2">
+    <!-- Home -->
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <h3>Home</h3>
+      <p>Daily word card, streak counter, compound multiplier (1.01^n), XP bar</p>
+    </div>
+    <!-- Explore -->
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <h3>Explore</h3>
+      <p>Browse by root or category, search, visual root connections</p>
+    </div>
+    <!-- Review -->
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      <h3>Review</h3>
+      <p>7 learning modes: Cold Word, Root Review, Combinator, Daily Chain, Synonyms, Production</p>
+    </div>
+    <!-- Settings -->
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <h3>Settings</h3>
+      <p>Theme (light/dark/system), language toggle, notification preferences</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 5 — Gamification
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-5">
+  <div class="orb orb-teal" style="top:-10%;left:20%"></div>
+  <div class="orb orb-purple" style="bottom:5%;right:-15%"></div>
+
+  <h2 class="section-title reveal">Gamification That Works</h2>
+  <p class="section-subtitle reveal reveal-delay-1">Tested with friends — even native English speakers couldn't recognize some words</p>
+
+  <ul class="bullet-list reveal reveal-delay-2">
+    <li>
+      <span class="bullet-dot"></span>
+      <span><span class="highlight">Cold Word Challenge</span> — surface rare words you've never seen. Surprisingly addictive — friends competed to beat each other's scores</span>
+    </li>
+    <li>
+      <span class="bullet-dot teal"></span>
+      <span><span class="highlight">7 learning modes</span> — Cold Word, Root Review, Combinator, Daily Chain, Synonyms, Production, and more unlock as you level up</span>
+    </li>
+    <li>
+      <span class="bullet-dot purple"></span>
+      <span><span class="highlight">8 XP levels</span> with streak bonuses up to 50% — rewarding consistency over intensity</span>
+    </li>
+    <li>
+      <span class="bullet-dot"></span>
+      <span><span class="highlight">22 achievements</span> across 4 categories — unlock badges that track real milestones, not vanity metrics</span>
+    </li>
+    <li>
+      <span class="bullet-dot teal"></span>
+      <span><span class="highlight">Spaced repetition</span> (SM-2) ensures words stick long-term — the algorithm decides what you review, not you</span>
+    </li>
+  </ul>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 6 — Tech Stack
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-6">
+  <div class="orb orb-green" style="bottom:-12%;left:-10%"></div>
+  <div class="orb orb-teal" style="top:5%;right:-10%"></div>
+
+  <h2 class="section-title reveal">Tech Stack</h2>
+  <p class="section-subtitle reveal reveal-delay-1">Modern React Native with Expo managed workflow</p>
+
+  <div class="cards cards-3 reveal reveal-delay-2">
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+      </svg>
+      <h3>Core</h3>
+      <p>React Native + Expo SDK 54, React 19, TypeScript 5.9</p>
+    </div>
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+      </svg>
+      <h3>Navigation</h3>
+      <p>React Navigation, AsyncStorage for local persistence</p>
+    </div>
+    <div class="card">
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
+      </svg>
+      <h3>Features</h3>
+      <p>expo-notifications, expo-speech, expo-haptics, Sentry monitoring</p>
+    </div>
+  </div>
+
+  <div class="tag-cloud reveal reveal-delay-3" style="margin-top:clamp(1rem,2vh,1.5rem)">
+    <span class="tag accent">Expo SDK 54</span>
+    <span class="tag accent">React 19</span>
+    <span class="tag">TypeScript 5.9</span>
+    <span class="tag">AsyncStorage</span>
+    <span class="tag">Sentry</span>
+    <span class="tag">expo-speech</span>
+    <span class="tag">expo-haptics</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 7 — Architecture
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-7">
+  <div class="orb orb-purple" style="top:-5%;left:-15%"></div>
+  <div class="orb orb-green" style="bottom:-10%;right:10%"></div>
+
+  <h2 class="section-title reveal">Architecture</h2>
+  <p class="section-subtitle reveal reveal-delay-1">Fully offline-first — no backend required</p>
+
+  <div class="arch-grid reveal reveal-delay-2">
+    <!-- Left column: vertical flow diagram -->
+    <div class="arch-diagram">
+      <!-- Tier 1: App Layer -->
+      <div class="arch-tier" style="border-color:rgba(74,222,128,0.2)">
+        <div class="tier-icon" style="background:rgba(74,222,128,0.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="tier-text">
+          <span class="tier-label" style="color:var(--primary)">App Layer</span>
+          <span class="tier-desc">React Native + Expo SDK 54</span>
+        </div>
+      </div>
+      <!-- Arrow -->
+      <div class="arch-down-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+      </div>
+      <!-- Tier 2: State Layer -->
+      <div class="arch-tier" style="border-color:rgba(45,212,191,0.2)">
+        <div class="tier-icon" style="background:rgba(45,212,191,0.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+          </svg>
+        </div>
+        <div class="tier-text">
+          <span class="tier-label" style="color:var(--secondary)">State Layer</span>
+          <span class="tier-desc">Settings + Progress + Mastery Contexts</span>
+        </div>
+      </div>
+      <!-- Arrow -->
+      <div class="arch-down-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+      </div>
+      <!-- Tier 3: Logic Layer -->
+      <div class="arch-tier" style="border-color:rgba(167,139,250,0.2)">
+        <div class="tier-icon" style="background:rgba(167,139,250,0.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--tertiary)" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <div class="tier-text">
+          <span class="tier-label" style="color:var(--tertiary)">Logic Layer</span>
+          <span class="tier-desc">SM-2 Engine, Cold Word Selector, Daily Word</span>
+        </div>
+      </div>
+      <!-- Arrow -->
+      <div class="arch-down-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+      </div>
+      <!-- Tier 4: Storage Layer -->
+      <div class="arch-tier" style="border-color:rgba(74,222,128,0.3)">
+        <div class="tier-icon" style="background:rgba(74,222,128,0.15)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+          </svg>
+        </div>
+        <div class="tier-text">
+          <span class="tier-label" style="color:var(--primary)">Storage Layer</span>
+          <span class="tier-desc">AsyncStorage (local, zero network)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: architecture detail cards -->
+    <div class="arch-details">
+      <div class="arch-detail-card" style="border-color:rgba(74,222,128,0.15)">
+        <h4 style="color:var(--primary)">Offline-First</h4>
+        <p>AsyncStorage for all persistence. Zero network dependency — the app works fully without internet.</p>
+      </div>
+      <div class="arch-detail-card" style="border-color:rgba(45,212,191,0.15)">
+        <h4 style="color:var(--secondary)">SM-2 Algorithm</h4>
+        <p>Spaced repetition engine calculates optimal review intervals with ease factor adjustment per word.</p>
+      </div>
+      <div class="arch-detail-card" style="border-color:rgba(167,139,250,0.15)">
+        <h4 style="color:var(--tertiary)">Etymology Engine</h4>
+        <p>Latin/Greek root analysis connects word families for deeper retention across 215 mapped roots.</p>
+      </div>
+      <div class="arch-detail-card" style="border-color:rgba(74,222,128,0.15)">
+        <h4 style="color:var(--primary)">Daily Pipeline</h4>
+        <p>Cold word selection, review queue generation, and mastery tracking — all seeded per day for consistency.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 8 — Stats Overview
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-8">
+  <div class="orb orb-green" style="top:15%;left:-8%"></div>
+  <div class="orb orb-teal" style="bottom:-5%;right:-12%"></div>
+  <div class="orb orb-purple" style="top:-10%;right:20%"></div>
+
+  <h2 class="section-title reveal">By the Numbers</h2>
+
+  <div class="stats-row reveal reveal-delay-1">
+    <div class="stat">
+      <div class="stat-value">1,005</div>
+      <div class="stat-label">Words</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">215</div>
+      <div class="stat-label">Roots</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">22</div>
+      <div class="stat-label">Achievements</div>
+    </div>
+  </div>
+
+  <div class="stats-row reveal reveal-delay-2" style="margin-top:clamp(1.5rem,3vh,2.5rem)">
+    <div class="stat">
+      <div class="stat-value">7</div>
+      <div class="stat-label">Learning Modes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">19</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">2</div>
+      <div class="stat-label">Languages</div>
+    </div>
+  </div>
+
+  <div class="badge-row reveal reveal-delay-3" style="margin-top:clamp(1.5rem,3vh,2.5rem)">
+    <span class="badge badge-green">Offline-First</span>
+    <span class="badge badge-teal">Spaced Repetition</span>
+    <span class="badge badge-purple">Gamified</span>
+    <span class="badge badge-green">Zero Backend</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SLIDE 9 — End
+     ════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-9">
+  <div class="orb orb-green" style="top:20%;left:30%;width:500px;height:500px;opacity:0.1"></div>
+  <div class="orb orb-teal" style="bottom:15%;right:25%;width:400px;height:400px;opacity:0.08"></div>
+
+  <div style="text-align:center">
+    <h1 class="title-hero reveal" style="font-size:clamp(2.5rem,6vw,5rem)">Articulate</h1>
+    <div class="end-divider reveal reveal-delay-1" style="margin:clamp(1rem,2vh,1.5rem) auto"></div>
+    <p class="reveal reveal-delay-2" style="font-size:clamp(0.8rem,1.2vw,1rem);color:var(--text-dim)">Gamified vocabulary learning through etymology. Show up daily, get better forever.</p>
+    <div style="margin-top:clamp(1.5rem,3vh,2.5rem)">
+      <p class="reveal reveal-delay-4" style="font-size:clamp(0.75rem,1vw,0.9rem);color:var(--text-dim)">Built by <strong style="color:var(--text)">Jazz Lien</strong></p>
+      <p class="reveal reveal-delay-5" style="font-size:clamp(0.65rem,0.9vw,0.8rem);color:rgba(138,155,138,0.6);margin-top:0.35rem">2026</p>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  'use strict';
+
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  const progressBar = document.getElementById('progressBar');
+  const navDotsContainer = document.getElementById('navDots');
+  const slideNumberEl = document.getElementById('slideNumber');
+
+  // Build nav dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    navDotsContainer.appendChild(dot);
+  });
+
+  const navDots = document.querySelectorAll('.nav-dot');
+
+  function updateUI(index) {
+    const progress = ((index + 1) / totalSlides) * 100;
+    progressBar.style.width = progress + '%';
+    slideNumberEl.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(totalSlides).padStart(2, '0');
+    navDots.forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+
+  // Intersection Observer for slide tracking and reveal animations
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Update nav
+        const slideIndex = Array.from(slides).indexOf(entry.target);
+        if (slideIndex !== -1) updateUI(slideIndex);
+        // Reveal children
+        entry.target.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(slide => revealObserver.observe(slide));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    let currentIndex = 0;
+    navDots.forEach((d, i) => { if (d.classList.contains('active')) currentIndex = i; });
+
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') && currentIndex < totalSlides - 1) {
+      e.preventDefault();
+      slides[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+    } else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') && currentIndex > 0) {
+      e.preventDefault();
+      slides[currentIndex - 1].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      slides[0].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      slides[totalSlides - 1].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Initialize first slide
+  updateUI(0);
+  slides[0].querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+})();
+</script>
+</body>
+</html>
