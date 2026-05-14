@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jazz Lien · Microsoft AI Business Solutions Portfolio · May 2026</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --fg: #0a1628;
+    --accent: #2563eb;
+    --muted: rgba(10, 22, 40, 0.62);
+    --faint: rgba(10, 22, 40, 0.42);
+    --line: rgba(10, 22, 40, 0.14);
+    --card: #ffffff;
+    --shadow: 0 1px 2px rgba(10, 22, 40, 0.04), 0 8px 24px rgba(10, 22, 40, 0.06);
+    --scale: 1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(10, 22, 40, 0.06);
+    z-index: 100;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .counter {
+    position: fixed;
+    bottom: 20px;
+    right: 28px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--faint);
+    letter-spacing: 0.04em;
+    z-index: 100;
+  }
+  .counter b { color: var(--fg); font-weight: 600; }
+
+  .hint {
+    position: fixed;
+    bottom: 20px;
+    left: 28px;
+    font-size: 12px;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 0.6s ease;
+  }
+  .hint.gone { opacity: 0; pointer-events: none; }
+  .hint .key {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-left: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slides {
+    width: 1280px;
+    height: 720px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(var(--scale));
+    transform-origin: center center;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 1280px;
+    height: 720px;
+    padding: 64px 80px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  .slide.prev { transform: translateX(-40px); }
+
+  /* ============ typography ============ */
+  h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+  h1 { font-size: 72px; }
+  h2 { font-size: 40px; }
+  h3 { font-size: 22px; font-weight: 600; }
+  h4 { font-size: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  p { line-height: 1.55; color: var(--muted); }
+  .lead { font-size: 18px; color: var(--fg); line-height: 1.5; }
+  .small { font-size: 13px; }
+  .accent { color: var(--accent); }
+  .footer-strip {
+    position: absolute;
+    bottom: 32px;
+    left: 80px;
+    right: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ============ slide 1 — title ============ */
+  .title-slide {
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .title-slide .label {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+  .title-slide h1 {
+    font-size: 96px;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+  .title-slide .sub {
+    font-size: 28px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .title-slide .sub .arrow { color: var(--accent); padding: 0 4px; }
+  .title-slide .foot {
+    position: absolute;
+    bottom: 64px;
+    left: 80px;
+    font-size: 13px;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+  }
+  .accent-bar {
+    width: 56px;
+    height: 4px;
+    background: var(--accent);
+    margin-bottom: 32px;
+  }
+
+  /* ============ section header ============ */
+  .slide-head {
+    margin-bottom: 36px;
+  }
+  .slide-head .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .slide-head h2 { margin-bottom: 8px; }
+  .slide-head .sub { font-size: 17px; color: var(--muted); }
+
+  /* ============ grid layouts ============ */
+  .col-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 28px;
+    flex: 1;
+  }
+  .col-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    flex: 1;
+  }
+  .col-2-wide {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 48px;
+    flex: 1;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px 28px 26px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card h4 { margin-bottom: 16px; }
+  .card ul { list-style: none; }
+  .card li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--fg);
+  }
+  .card li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 9px;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .card p { font-size: 15px; color: var(--fg); margin-bottom: 8px; }
+  .card .meta { font-size: 13px; color: var(--muted); }
+
+  .strip {
+    margin-top: 24px;
+    padding: 14px 24px;
+    background: var(--fg);
+    color: var(--bg);
+    border-radius: 8px;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+  .strip b { color: #fff; font-weight: 600; }
+  .strip .dot { display: inline-block; margin: 0 12px; color: var(--accent); }
+
+  /* ============ slide 4 — diagram ============ */
+  .diagram-slide { padding: 56px 64px 48px; }
+  .diagram-slide h2 { font-size: 32px; margin-bottom: 6px; }
+  .diagram-slide .sub { font-size: 15px; color: var(--muted); margin-bottom: 18px; }
+  .diagram-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .diagram-wrap svg { width: 100%; height: 100%; max-height: 480px; }
+  .diagram-cap {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ============ slide 5 — ROI tiers ============ */
+  .tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+    justify-content: center;
+  }
+  .tier {
+    display: grid;
+    grid-template-columns: 110px 200px 1fr;
+    align-items: center;
+    gap: 24px;
+    padding: 20px 26px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+  }
+  .tier .num {
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+  .tier .label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  .tier .desc { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  .tier-foot {
+    margin-top: 18px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    text-align: center;
+  }
+  .tier-foot b { color: var(--fg); font-weight: 600; }
+
+  /* foundation row under the three ROI tiers — "ROI sits on top of cost discipline" */
+  .tiers-sep {
+    height: 1px;
+    background: var(--line);
+    margin: 6px 0 2px;
+  }
+  .tier-foundation {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 14px 26px;
+    background: rgba(10, 22, 40, 0.025);
+    border: 1px solid var(--line);
+    border-left: 4px solid rgba(10, 22, 40, 0.22);
+    border-radius: 8px;
+  }
+  .foundation-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .foundation-desc {
+    font-size: 13px;
+    color: var(--faint);
+    line-height: 1.5;
+  }
+
+  /* slide 5 — cost framework bottom strip */
+  .cost-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .cost-principle {
+    padding: 14px 24px;
+    background: var(--fg);
+    color: var(--bg);
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.55;
+  }
+  .cost-principle b { color: #fff; font-weight: 600; }
+  .cost-sow {
+    font-size: 12px;
+    color: var(--faint);
+    font-style: italic;
+    text-align: center;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  /* card header icon row (slides 2, 10) */
+  .card-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .card-icon-row h4 { margin-bottom: 0; }
+  .card-icon-row svg {
+    width: 22px;
+    height: 22px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* stat list (slide 6 — top articles) */
+  .stat-list { display: flex; flex-direction: column; margin-top: 4px; }
+  .stat-row {
+    display: flex;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-title {
+    color: var(--fg);
+    font-size: 14px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .stat-title .zh { color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .stat-dots {
+    flex: 1;
+    border-bottom: 1px dotted rgba(10, 22, 40, 0.28);
+    margin: 0 12px;
+    position: relative;
+    top: -3px;
+    min-width: 16px;
+  }
+  .stat-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .stat-unit {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 5px;
+    font-weight: 400;
+  }
+  .stat-summary {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-align: right;
+  }
+  .stat-summary b { color: var(--fg); font-weight: 600; }
+
+  /* ============ slide 8 — product grid ============ */
+  .product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+  }
+  .product {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .product .icon {
+    width: 32px; height: 32px;
+    margin-bottom: 14px;
+    color: var(--accent);
+  }
+  .product h4 {
+    font-size: 15px;
+    color: var(--fg);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .product .meta {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .product .tag {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 2px 8px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    align-self: flex-start;
+  }
+
+  /* ============ slide 9 — systems ============ */
+  .systems {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    flex: 1;
+  }
+  .systems .left p { font-size: 16px; color: var(--fg); line-height: 1.55; margin-bottom: 18px; }
+  .systems .left .quote {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-top: 24px;
+    font-style: italic;
+  }
+  .components {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .component {
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .component .name {
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 2px;
+  }
+  .component .what { color: var(--muted); font-size: 13px; }
+  .results {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--fg);
+    color: var(--bg);
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .results b { color: #fff; }
+
+  /* ============ slide 11 — gap/ramp ============ */
+  .gap-ramp h4 .badge {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+
+  /* ============ slide 12 — closing ============ */
+  .closing {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .closing h2 {
+    font-size: 44px;
+    max-width: 900px;
+    line-height: 1.25;
+    margin-bottom: 32px;
+    letter-spacing: -0.02em;
+  }
+  .closing h2 .accent { display: inline; }
+  .closing .foot {
+    font-size: 13px;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+  }
+  .closing .foot .sep { color: var(--accent); padding: 0 8px; }
+
+  /* ============ stage scaling fallback ============ */
+  @media (max-aspect-ratio: 16 / 9) {
+    /* narrow viewport: scale by width */
+  }
+
+  /* ============ mobile / small viewports ============ */
+  @media (max-width: 900px) {
+    html, body { overflow: auto; height: auto; }
+    .progress, .counter, .hint { display: none; }
+
+    .stage {
+      position: static;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .slides {
+      position: static;
+      transform: none;
+      width: 100%;
+      height: auto;
+    }
+    .slide {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: auto;
+      min-height: auto;
+      padding: 36px 18px 32px;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto;
+      border-bottom: 1px solid var(--line);
+    }
+    .slide:last-child { border-bottom: none; }
+
+    /* typography */
+    h1 { font-size: 40px; }
+    h2 { font-size: 22px; }
+    h4 { font-size: 12px; letter-spacing: 0.1em; }
+    .title-slide h1 { font-size: 52px; line-height: 1.05; }
+    .title-slide .sub { font-size: 18px; }
+    .title-slide .foot { position: static; left: auto; bottom: auto; margin-top: 24px; }
+    .title-slide .label { font-size: 11px; margin-bottom: 14px; }
+    .slide-head { margin-bottom: 18px; }
+    .slide-head h2 { margin-bottom: 6px; }
+    .slide-head .sub { font-size: 14px; }
+
+    /* stack all grids */
+    .col-2,
+    .col-2-wide,
+    .col-3,
+    .product-grid,
+    .systems {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: auto !important;
+      gap: 14px !important;
+    }
+
+    /* cards: tighter padding, smaller bullets */
+    .card { padding: 18px 18px 16px; }
+    .card li { font-size: 13px; line-height: 1.45; }
+
+    /* footer-strip becomes inline on mobile */
+    .footer-strip {
+      position: static;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      margin-top: 14px;
+      padding: 8px 0 0;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    /* cost framework bottom strip */
+    .cost-principle { padding: 12px 16px; font-size: 13px; line-height: 1.5; }
+    .cost-sow { font-size: 11px; }
+
+    /* strip (slide 2 certs strip) */
+    .strip { margin-top: 14px; padding: 10px 14px; font-size: 12px; }
+
+    /* product grid items */
+    .product { padding: 16px 18px; }
+    .product h4 { font-size: 14px; }
+    .product .meta { font-size: 11px; }
+
+    /* systems components */
+    .component { padding: 12px 14px; }
+    .component .name { font-size: 13px; }
+    .component .what { font-size: 12px; }
+    .results { padding: 12px 14px; font-size: 12px; }
+    .systems .left p { font-size: 14px; }
+    .systems .left .quote { font-size: 13px; }
+
+    /* diagram slide */
+    .diagram-slide { padding: 36px 18px 36px; }
+    .diagram-cap { font-size: 11px; }
+
+    /* SVGs scale to container width by default */
+    .slide svg { max-width: 100%; height: auto; }
+
+    /* architecture diagram: stays readable via horizontal scroll on narrow phones */
+    .diagram-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .diagram-wrap svg {
+      min-width: 640px;
+      max-height: none;
+    }
+
+    /* closing slide */
+    .closing { padding: 48px 24px; align-items: center; }
+    .closing h2 { font-size: 26px; max-width: none; }
+    .closing div[style*="flex"] {
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+
+    /* gap-ramp slide 12 badge */
+    .gap-ramp h4 .badge { font-size: 9px; }
+  }
+
+  /* ============ print ============ */
+  @media print {
+    html, body { overflow: visible; height: auto; }
+    .stage { width: auto; height: auto; }
+    .progress, .counter, .hint { display: none; }
+    .slides {
+      position: static;
+      transform: none;
+      width: auto;
+      height: auto;
+    }
+    .slide {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: auto;
+      min-height: 100vh;
+      page-break-after: always;
+      break-after: page;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto;
+    }
+    .slide:last-child { page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+<div class="counter"><b id="curNum">1</b> / <span id="totalNum">13</span></div>
+<div class="hint" id="hint">Press <span class="key">→</span> for next</div>
+
+<div class="stage">
+<div class="slides" id="slides">
+
+<!-- =================== SLIDE 1 — Title =================== -->
+<section class="slide title-slide active">
+  <div class="label">Portfolio Walkthrough</div>
+  <div class="accent-bar"></div>
+  <h1>Jazz Lien</h1>
+  <div class="sub">AI Business Solution Consultant</div>
+  <div class="foot">Portfolio walkthrough · Microsoft AI Business Solutions · May 2026</div>
+</section>
+
+<!-- =================== SLIDE 2 — 60-Second Story =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">The 60-Second Story</div>
+    <h2>Each chapter taught me the next stack.</h2>
+  </div>
+
+  <div class="col-3">
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+        <h4>Path</h4>
+      </div>
+      <ul>
+        <li>Foreign languages → Tour leader → QA → Continuing education → Azure cloud → GCP</li>
+        <li>Solution Architect / TAM at CloudMile, Google Cloud Premier Partner</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <h4>What I do</h4>
+      </div>
+      <ul>
+        <li>Enterprise architecture for airline, gaming, media, Web3 clients</li>
+        <li>Multi-agent AI, RAG, data modernization</li>
+        <li>Ship AI products end-to-end on the side — including an open-source AI development workflow</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        <h4>Cloud credentials</h4>
+      </div>
+      <ul>
+        <li><b>11 cloud certifications</b> across Azure + GCP</li>
+        <li><b>5 Azure</b>: AI Engineer · Developer · Data Engineer · AI Fundamentals · Azure Fundamentals</li>
+        <li><b>6 GCP Professional</b>: Architect · DB · DevOps · Workspace · ML · Security</li>
+        <li>Google Cloud Authorized Trainer</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =================== SLIDE 3 — Featured Architecture =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">Designed solution · Gaming client · Q4 2025</div>
+    <h2>Multi-Agent Customer Service</h2>
+  </div>
+
+  <div class="col-2">
+    <div class="card">
+      <h4>Business problem</h4>
+      <ul>
+        <li>Customer service team facing high repetitive query volume</li>
+        <li>Long agent training cycles, knowledge fragmented across DOCX / HTML / PPT</li>
+        <li>Staff attrition disrupting service quality</li>
+        <li>Client wanted AI-first response with human-in-loop escalation</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>What I designed</h4>
+      <ul>
+        <li>Multi-agent architecture: Root orchestrator + RAG agents + Task agents</li>
+        <li>Vertex AI Agent Builder + Agent Development Kit (ADK)</li>
+        <li>Vector DB knowledge layer, internal API integration, Model Armor safety</li>
+        <li>5-phase plan: discovery → MVP → beta → scale → multi-channel</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0;">
+    Client ultimately elected to build in-house — the architecture gave them clarity to make that call.
+  </div>
+</section>
+
+<!-- =================== SLIDE 4 — Architecture diagram =================== -->
+<section class="slide diagram-slide">
+  <div class="slide-head" style="margin-bottom: 8px;">
+    <div class="eyebrow">Architecture</div>
+    <h2>Root orchestrator, two agent groups, one safety layer.</h2>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 -36 1200 516" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Multi-agent architecture">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#0a1628"/>
+        </marker>
+        <marker id="arrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/>
+        </marker>
+        <style>
+          .box { fill: #ffffff; stroke: #0a1628; stroke-width: 1.5; }
+          .box-accent { fill: #ffffff; stroke: #2563eb; stroke-width: 2; }
+          .box-fg { fill: #0a1628; stroke: #0a1628; }
+          .tlabel { font-family: "Inter", system-ui, sans-serif; font-size: 13px; fill: #0a1628; font-weight: 500; }
+          .tlabel-small { font-family: "Inter", system-ui, sans-serif; font-size: 11px; fill: rgba(10,22,40,0.62); }
+          .tlabel-light { font-family: "Inter", system-ui, sans-serif; font-size: 13px; fill: #ffffff; font-weight: 500; }
+          .group-label { font-family: "Inter", system-ui, sans-serif; font-size: 11px; fill: rgba(10,22,40,0.5); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+          .flow { fill: none; stroke: #0a1628; stroke-width: 1.5; }
+          .flow-blue { fill: none; stroke: #2563eb; stroke-width: 2; }
+        </style>
+      </defs>
+
+      <!-- Row 1: User → API Gateway → Root Agent -->
+      <g>
+        <rect class="box" x="40" y="40" width="100" height="44" rx="6"/>
+        <text class="tlabel" x="90" y="67" text-anchor="middle">User</text>
+
+        <path class="flow" d="M140,62 L210,62" marker-end="url(#arr)"/>
+
+        <rect class="box" x="210" y="40" width="140" height="44" rx="6"/>
+        <text class="tlabel" x="280" y="67" text-anchor="middle">API Gateway</text>
+
+        <path class="flow" d="M350,62 L440,62" marker-end="url(#arr)"/>
+
+        <rect class="box-accent box" x="440" y="32" width="200" height="60" rx="8"/>
+        <text class="tlabel" x="540" y="60" text-anchor="middle" font-weight="600">Root Agent</text>
+        <text class="tlabel-small" x="540" y="78" text-anchor="middle">Orchestrator</text>
+      </g>
+
+      <!-- Split lines from Root Agent down to two branches -->
+      <path class="flow-blue" d="M540,92 L540,130 L290,130 L290,170" marker-end="url(#arrBlue)"/>
+      <path class="flow-blue" d="M540,92 L540,130 L790,130 L790,170" marker-end="url(#arrBlue)"/>
+
+      <!-- Row 2: RAG Agent Group | Task Agent Group -->
+      <g>
+        <rect class="box" x="180" y="170" width="220" height="60" rx="6"/>
+        <text class="tlabel" x="290" y="197" text-anchor="middle" font-weight="600">RAG Agent Group</text>
+        <text class="tlabel-small" x="290" y="215" text-anchor="middle">Knowledge retrieval &amp; synthesis</text>
+      </g>
+      <g>
+        <rect class="box" x="680" y="170" width="220" height="60" rx="6"/>
+        <text class="tlabel" x="790" y="197" text-anchor="middle" font-weight="600">Task Agent Group</text>
+        <text class="tlabel-small" x="790" y="215" text-anchor="middle">Transactional operations</text>
+      </g>
+
+      <!-- Arrows to data stores -->
+      <path class="flow" d="M290,230 L290,270" marker-end="url(#arr)"/>
+      <path class="flow" d="M790,230 L790,270" marker-end="url(#arr)"/>
+
+      <!-- Row 3: Vector DB | Internal APIs box -->
+      <g>
+        <rect class="box" x="200" y="270" width="180" height="44" rx="6"/>
+        <text class="tlabel" x="290" y="297" text-anchor="middle">Vector DB</text>
+
+        <!-- knowledge sources feeding vector DB -->
+        <rect class="box" x="60" y="350" width="120" height="38" rx="6"/>
+        <text class="tlabel" x="120" y="374" text-anchor="middle">FAQ</text>
+
+        <rect class="box" x="200" y="350" width="120" height="38" rx="6"/>
+        <text class="tlabel" x="260" y="374" text-anchor="middle">Patch Notes</text>
+
+        <rect class="box" x="340" y="350" width="100" height="38" rx="6"/>
+        <text class="tlabel" x="390" y="374" text-anchor="middle">Docs</text>
+
+        <text class="group-label" x="60" y="335">Knowledge sources</text>
+
+        <path class="flow" d="M120,350 L120,330 L260,330 L260,314" marker-end="url(#arr)"/>
+        <path class="flow" d="M260,350 L260,314" marker-end="url(#arr)"/>
+        <path class="flow" d="M390,350 L390,330 L320,330 L320,314" marker-end="url(#arr)"/>
+      </g>
+
+      <g>
+        <!-- Internal APIs (4 small boxes) -->
+        <rect class="box" x="680" y="270" width="100" height="38" rx="6"/>
+        <text class="tlabel" x="730" y="294" text-anchor="middle">CRM</text>
+        <rect class="box" x="800" y="270" width="100" height="38" rx="6"/>
+        <text class="tlabel" x="850" y="294" text-anchor="middle">UserDB</text>
+        <rect class="box" x="680" y="320" width="100" height="38" rx="6"/>
+        <text class="tlabel" x="730" y="344" text-anchor="middle">PaymentDB</text>
+        <rect class="box" x="800" y="320" width="100" height="38" rx="6"/>
+        <text class="tlabel" x="850" y="344" text-anchor="middle">GameAdmin</text>
+
+        <text class="group-label" x="680" y="260">Internal APIs</text>
+      </g>
+
+      <!-- Right side: Model Armor + LLM layer -->
+      <g>
+        <text class="group-label" x="970" y="60">LLM layer</text>
+
+        <rect class="box-accent box" x="970" y="80" width="190" height="48" rx="6"/>
+        <text class="tlabel" x="1065" y="103" text-anchor="middle" font-weight="600">Model Armor</text>
+        <text class="tlabel-small" x="1065" y="120" text-anchor="middle">Safety / compliance screen</text>
+
+        <path class="flow-blue" d="M1065,128 L1065,160" marker-end="url(#arrBlue)"/>
+
+        <rect class="box-fg box" x="970" y="160" width="190" height="48" rx="6"/>
+        <text class="tlabel-light" x="1065" y="190" text-anchor="middle">LLM</text>
+      </g>
+
+      <!-- Single clear connection: Root Agent → Model Armor (gates all LLM calls) -->
+      <path class="flow-blue" d="M640,62 L970,104" marker-end="url(#arrBlue)" opacity="0.9"/>
+      <text class="tlabel-small" x="810" y="78" text-anchor="middle" font-style="italic">LLM calls</text>
+
+      <!-- Response back to user (curved dashed) -->
+      <path class="flow-blue" d="M540,32 Q540,-20 320,-20 Q90,-20 90,40" marker-end="url(#arrBlue)" stroke-dasharray="4,4"/>
+      <text class="tlabel-small" x="300" y="-26" text-anchor="middle" font-style="italic">formatted response</text>
+
+      <!-- Bottom legend -->
+      <g transform="translate(0, 430)">
+        <line x1="40" y1="0" x2="60" y2="0" stroke="#0a1628" stroke-width="1.5"/>
+        <text class="tlabel-small" x="68" y="4">control flow</text>
+        <line x1="180" y1="0" x2="200" y2="0" stroke="#2563eb" stroke-width="2"/>
+        <text class="tlabel-small" x="208" y="4">agent orchestration</text>
+        <line x1="360" y1="0" x2="380" y2="0" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4"/>
+        <text class="tlabel-small" x="388" y="4">response path</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="diagram-cap">
+    Built on Vertex AI + ADK. The orchestration pattern translates directly to Microsoft Agent Framework (MAF) for pro-code, with Copilot Studio + Power Platform as the low-code surface above.
+  </div>
+</section>
+
+<!-- =================== SLIDE 5 — Solution costing =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">Solution costing</div>
+    <h2>Bottom-up estimate × top-down budget, reconciled.</h2>
+  </div>
+
+  <div class="col-2">
+    <div class="card">
+      <h4>Bottom-up — usage-driven model</h4>
+      <ul>
+        <li><b>Inference</b> — tokens × volume × $/1M (model choice dominates)</li>
+        <li><b>Orchestration overhead</b> — multi-agent stacks ≈ 2-3× a single LLM call</li>
+        <li><b>Retrieval</b> — embeddings + vector DB queries</li>
+        <li><b>Platform</b> — compute, storage, logs, monitoring</li>
+        <li><b>Licenses</b> — per-seat enterprise AI for internal agent-assist (e.g., Gemini Enterprise for human service teams)</li>
+        <li><b>Implementation</b> — design, build, change management, training</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>Top-down — budget-driven constraints</h4>
+      <ul>
+        <li><b>Budget envelope</b> — what the client will authorize</li>
+        <li><b>Status quo baseline</b> — what they pay today for the same outcome (FTE × salary × overhead)</li>
+        <li><b>Phased rollout</b> — pilot small, prove value, expand. Caps blast radius if assumptions are wrong.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cost-bottom">
+    <div class="cost-principle">
+      Gap between the two drives <b>model selection</b>, <b>agent count</b>, and <b>phasing</b> — not the other way around.
+    </div>
+    <div class="cost-sow">
+      Value tracked separately — 30-day leading + 90-day business metric, defined in the SOW.
+    </div>
+  </div>
+</section>
+
+<!-- =================== SLIDE 6 — AOAI Evangelism =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">Earlier chapter · First-wave Azure OpenAI evangelism</div>
+    <h2>Taiwan, 2023 – 2024 — when Azure OpenAI was new.</h2>
+    <div class="sub" style="margin-top: 10px;">
+      <b style="color: var(--accent); font-weight: 600;">85,000+</b> views
+      <span style="color: var(--faint); padding: 0 6px;">·</span>
+      <b style="color: var(--accent); font-weight: 600;">50,000+</b> reads
+      <span style="color: var(--faint); padding: 0 6px;">·</span>
+      <b style="color: var(--accent); font-weight: 600;">23</b> tutorials
+    </div>
+  </div>
+
+  <div class="col-2-wide">
+    <div class="card">
+      <h4>What I did</h4>
+      <p style="font-size: 14.5px; line-height: 1.55; color: var(--fg); margin-bottom: 14px;">
+        When AOAI was the only path to GPT models with enterprise compliance, I helped Taiwanese enterprises adopt it — internally as a sales engineer, and publicly as a bilingual technical writer.
+      </p>
+      <ul>
+        <li>Set up first AOAI demos for enterprise prospects</li>
+        <li>Trained sales teams on AOAI capabilities, role-based access, compliance</li>
+        <li>Published 23 deep-dive tutorials in English + Traditional Chinese across 2023 – 2024</li>
+      </ul>
+    </div>
+
+    <div class="card" style="padding: 22px;">
+      <h4 style="margin-bottom: 12px;">
+        Top articles by reads
+        <span style="font-weight: 400; color: var(--faint); text-transform: none; letter-spacing: 0; font-size: 12px; margin-left: 6px;">Medium analytics, public</span>
+      </h4>
+      <img src="images/medium-stats.jpg"
+           alt="Medium analytics dashboard showing top 5 articles by views and reads"
+           style="width: 100%; height: auto; display: block; border-radius: 4px; border: 1px solid var(--line);">
+    </div>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0;">
+    Translating new AI capability into enterprise adoption — at scale.
+  </div>
+</section>
+
+<!-- =================== SLIDE 7 — GitHub Copilot =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">GitHub Copilot rollout</div>
+    <h2>AI-assisted development for a non-AI-native dev org.</h2>
+  </div>
+
+  <div class="col-2-wide">
+    <div class="card">
+      <h4>What I shipped</h4>
+      <ul>
+        <li>End-to-end Copilot demo: signup → seat assignment → IDE integration</li>
+        <li>Bilingual deployment guides for JetBrains and VS Code workflows</li>
+        <li>Enabled the PM team to launch a new product line around AI-assisted dev services</li>
+      </ul>
+    </div>
+
+    <div class="card" style="padding: 20px;">
+      <h4 style="margin-bottom: 10px;">
+        Chinese Copilot tutorial
+        <span style="font-weight: 400; color: var(--faint); text-transform: none; letter-spacing: 0; font-size: 12px; margin-left: 6px;">Weblink CSP 資訊網</span>
+      </h4>
+      <img src="images/weblink-page.jpg"
+           alt="Chinese GitHub Copilot tutorial republished on Weblink CSP industry blog"
+           style="width: 100%; height: auto; display: block; border-radius: 4px; border: 1px solid var(--line);">
+      <div style="font-size: 12px; color: var(--muted); margin-top: 10px; font-style: italic;">
+        「如何啟用 GitHub Copilot」教學 · republished on Taiwan industry blog
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0;">
+    Same instinct as AI Business Solutions consulting: take a new AI capability, make it <span class="accent" style="font-style: normal; font-weight: 600;">deployable</span>, prove <span class="accent" style="font-style: normal; font-weight: 600;">ROI</span>, train the org to use it.
+  </div>
+</section>
+
+<!-- =================== SLIDE 8 — Builder practice =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">12+ AI products shipped in 2 months</div>
+    <h2>Personal AI builder practice.</h2>
+  </div>
+
+  <div class="product-grid">
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11.5V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><circle cx="12" cy="12" r="3"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/></svg>
+        <h4>Memorial Video AI Service</h4>
+        <div class="meta">Production · live payments · Next.js + CF Pages</div>
+      </div>
+      <span class="tag">Live</span>
+    </div>
+
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <h4>Podsight — Podcast Transcription</h4>
+        <div class="meta">Taiwan finance podcasts · Whisper pipeline</div>
+      </div>
+      <span class="tag">Live</span>
+    </div>
+
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5-7 7"/></svg>
+        <h4>Jazz Gallery</h4>
+        <div class="meta">AI artwork gallery · admin dashboard · auth</div>
+      </div>
+      <span class="tag">Live</span>
+    </div>
+
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <h4>Articulate — Etymology Vocabulary</h4>
+        <div class="meta">1,005 words · 215 roots · React Native</div>
+      </div>
+      <span class="tag">Mobile</span>
+    </div>
+
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <h4>GCP Landing Zone</h4>
+        <div class="meta">Production-grade · 7 Terraform modules · 54 resources</div>
+      </div>
+      <span class="tag">Infra</span>
+    </div>
+
+    <div class="product">
+      <div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <h4>Claude Code Workflow</h4>
+        <div class="meta">Open-source AI development system</div>
+      </div>
+      <span class="tag">OSS</span>
+    </div>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0;">
+    Full archive at jazzlien.com/projects — happy to walk through any of these.
+  </div>
+</section>
+
+<!-- =================== SLIDE 9 — Systems thinking =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">Open-source AI development workflow system</div>
+    <h2>Systems thinking about AI.</h2>
+  </div>
+
+  <div class="systems">
+    <div class="left">
+      <p>
+        Treats AI not as a chat tool but as a development partner with persistent memory. Six files, four protocols, one principle:
+        <strong style="color: var(--fg);">every session builds on the last.</strong>
+      </p>
+      <div class="results">
+        <b>10× shipping velocity.</b> 12+ projects in 2 months.<br>
+        ~10 colleagues onboarded at CloudMile across engineering, sales, and pre-sales.
+      </div>
+      <div class="quote">
+        If you're hiring someone to help enterprises operationalize Copilot Studio agents, this is the kind of thinking they should bring.
+      </div>
+      <div style="font-size: 12px; color: var(--faint); font-style: italic; margin-top: 14px; line-height: 1.5;">
+        Written up in detail at jazzlien.com/blog — "The 3 Files That Turn Claude Code Into Your Dev Partner" and "Building a Personal AI Agent System".
+      </div>
+    </div>
+
+    <div>
+      <img src="images/claude-code-workflow.jpg"
+           alt="Claude Code Workflow open-source project card"
+           style="width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto 18px; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(10,22,40,0.08);">
+
+      <div class="components">
+        <div class="component">
+          <div class="name">CLAUDE.md + soul.md</div>
+          <div class="what">Auto-loaded context — identity, conventions, voice</div>
+        </div>
+        <div class="component">
+          <div class="name">HANDOVER.md</div>
+          <div class="what">Cross-session relay — state survives context resets</div>
+        </div>
+        <div class="component">
+          <div class="name">Skills/ + Knowledge/</div>
+          <div class="what">On-demand enrichment — capability + reference, separated</div>
+        </div>
+        <div class="component">
+          <div class="name">10-chapter PM Handbook</div>
+          <div class="what">Decision frameworks — discovery, prioritization, ship discipline</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== SLIDE 10 — Operating Model =================== -->
+<section class="slide">
+  <div class="slide-head">
+    <div class="eyebrow">Operating model</div>
+    <h2>How I run engagements.</h2>
+  </div>
+
+  <div class="col-3">
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <h4>Solo on a project</h4>
+      </div>
+      <p style="font-size: 14px; line-height: 1.55; color: var(--fg);">
+        Knowledge transfer designed in from day one. CLAUDE.md + HANDOVER.md system is open-source proof — same documentation protocol I use with AI agents, I use with human teammates and clients.
+      </p>
+      <p style="font-size: 14px; line-height: 1.55; color: var(--muted); margin-top: 10px;">
+        Decisions are written, not remembered.
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <h4>In parallel with other work</h4>
+      </div>
+      <ul>
+        <li>Weekly status one-pager up to manager</li>
+        <li>Clear escalation triggers</li>
+        <li>Dashboard-driven priority management</li>
+        <li>The "no surprises" rule</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-icon-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <h4>When the manager is unavailable</h4>
+      </div>
+      <p style="font-size: 14px; line-height: 1.55; color: var(--fg);">
+        Own the decision, document the reasoning, flag the risk, move forward. Synchronize on next available cadence.
+      </p>
+      <p style="font-size: 14px; line-height: 1.55; color: var(--muted); margin-top: 10px; font-style: italic;">
+        The cost of waiting usually exceeds the cost of correcting.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0; justify-content: center;">
+    Built for parallel engagement work — which is the AI Business Solutions shape.
+  </div>
+</section>
+
+<!-- =================== SLIDE 11 — Why AI Business Solutions =================== -->
+<section class="slide">
+  <div class="slide-head" style="margin-bottom: 14px;">
+    <div class="eyebrow">Why AI Business Solutions, why now</div>
+    <h2>Three reinforcing capabilities meeting at the role.</h2>
+  </div>
+
+  <div style="display: flex; justify-content: center; margin-bottom: 18px;">
+    <svg viewBox="0 0 500 170" width="380" height="130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three capabilities converging at AI Business Solutions role">
+      <defs>
+        <style>
+          .cap-label { font-family: "Inter", system-ui, sans-serif; font-size: 13px; font-weight: 600; fill: #0a1628; }
+          .center-label { font-family: "Inter", system-ui, sans-serif; font-size: 10px; font-weight: 700; fill: #2563eb; letter-spacing: 0.16em; }
+        </style>
+      </defs>
+      <!-- triangle edges -->
+      <path d="M 250 40 L 90 135 L 410 135 Z" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-opacity="0.35" stroke-dasharray="3,4"/>
+      <!-- vertex dots -->
+      <circle cx="250" cy="40" r="9" fill="#2563eb"/>
+      <circle cx="90" cy="135" r="9" fill="#2563eb"/>
+      <circle cx="410" cy="135" r="9" fill="#2563eb"/>
+      <!-- center halo + dot -->
+      <circle cx="250" cy="103" r="22" fill="#2563eb" fill-opacity="0.08"/>
+      <circle cx="250" cy="103" r="11" fill="#2563eb" fill-opacity="0.2"/>
+      <circle cx="250" cy="103" r="4" fill="#2563eb"/>
+      <!-- vertex labels -->
+      <text x="250" y="22" text-anchor="middle" class="cap-label">Customer translation</text>
+      <text x="90" y="158" text-anchor="middle" class="cap-label">AI architecture depth</text>
+      <text x="410" y="158" text-anchor="middle" class="cap-label">Learning velocity</text>
+      <!-- center label -->
+      <text x="250" y="86" text-anchor="middle" class="center-label">AI BS FIT</text>
+    </svg>
+  </div>
+
+  <div class="col-3">
+    <div class="card">
+      <h4>Customer translation</h4>
+      <ul>
+        <li>Google Cloud Authorized Trainer</li>
+        <li>2 years enterprise consulting</li>
+        <li>Documented bilingual technical writing</li>
+        <li>Pre-sales and post-sales experience</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>AI architecture depth</h4>
+      <ul>
+        <li>Multi-agent RAG designs</li>
+        <li>Agent orchestration (ADK pattern)</li>
+        <li>Production AI products shipped</li>
+        <li>Open-source AI workflow system</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Learning velocity</h4>
+      <ul>
+        <li>11 certs while delivering customer work</li>
+        <li>AOAI → ADK → Claude Code → <b>Microsoft Agent Framework</b> next</li>
+        <li>Pattern: fast adoption of each new AI capability</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =================== SLIDE 12 — Gap / Ramp =================== -->
+<section class="slide gap-ramp">
+  <div class="slide-head">
+    <div class="eyebrow">Honest gap &amp; ramp plan</div>
+    <h2>What I haven't done yet — and how I close it.</h2>
+  </div>
+
+  <div class="col-2">
+    <div class="card" style="border-left: 4px solid rgba(10,22,40,0.3);">
+      <h4>Gap</h4>
+      <ul>
+        <li>Intune policy authoring + Autopilot at enterprise scale</li>
+        <li>Defender for Endpoint operations + Defender XDR correlation</li>
+        <li>Modern Desktop / M365 admin cert track depth</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--accent);">
+      <h4>Ramp <span class="badge">already started</span></h4>
+      <ul>
+        <li><b>Already shipped:</b> public MS Modern Work knowledge base — 9 sections, identity through interview prep</li>
+        <li>5 Azure certs accelerate the M365 stack ramp</li>
+        <li>11 certs earned while delivering customer work — same engine for this stack</li>
+      </ul>
+      <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img src="images/knowledge-qr.png" alt="QR code linking to the public MS Modern Work knowledge base" style="width: 64px; height: 64px; border-radius: 4px; border: 1px solid var(--line); background: #fff; padding: 3px; flex-shrink: 0;">
+          <div>
+            <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px;">Scan the receipt</div>
+            <div style="font-size: 12px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; line-height: 1.3;">jazz-knowledge-management.pages.dev</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: var(--muted); line-height: 1.55;">
+          Foundations · Identity &amp; Zero Trust · Endpoint Management · Productivity · Copilot &amp; AI · Power Platform · Security &amp; Compliance · Business Case · Interview Prep
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 18px;">
+    <svg viewBox="0 0 1120 140" style="width: 100%; height: auto; display: block;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="60-day ramp plan timeline">
+      <defs>
+        <style>
+          .phase-name { font-family: "Inter", system-ui, sans-serif; font-size: 14px; font-weight: 600; fill: #0a1628; }
+          .phase-desc { font-family: "Inter", system-ui, sans-serif; font-size: 11px; fill: rgba(10,22,40,0.62); }
+          .day-marker { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; fill: rgba(10,22,40,0.55); letter-spacing: 0.1em; font-weight: 600; }
+          .phase-num { font-family: "Inter", system-ui, sans-serif; font-size: 10px; font-weight: 700; fill: #ffffff; letter-spacing: 0.08em; }
+        </style>
+      </defs>
+
+      <!-- Phase bars (light → medium → solid) -->
+      <rect x="40" y="50" width="340" height="32" rx="5" fill="#2563eb" fill-opacity="0.4"/>
+      <rect x="390" y="50" width="340" height="32" rx="5" fill="#2563eb" fill-opacity="0.7"/>
+      <rect x="740" y="50" width="340" height="32" rx="5" fill="#2563eb"/>
+
+      <!-- Phase numbers inside bars -->
+      <text x="55" y="71" class="phase-num">01</text>
+      <text x="405" y="71" class="phase-num">02</text>
+      <text x="755" y="71" class="phase-num">03</text>
+
+      <!-- Phase names above bars -->
+      <text x="210" y="38" text-anchor="middle" class="phase-name">Entra ID + Conditional Access</text>
+      <text x="560" y="38" text-anchor="middle" class="phase-name">Intune + Autopilot</text>
+      <text x="910" y="38" text-anchor="middle" class="phase-name">Defender for Endpoint</text>
+
+      <!-- Phase descriptions below bars -->
+      <text x="210" y="100" text-anchor="middle" class="phase-desc">Identity foundation</text>
+      <text x="560" y="100" text-anchor="middle" class="phase-desc">Endpoint management</text>
+      <text x="910" y="100" text-anchor="middle" class="phase-desc">Threat protection</text>
+
+      <!-- Day axis -->
+      <line x1="40" y1="117" x2="1080" y2="117" stroke="rgba(10,22,40,0.16)" stroke-width="1"/>
+      <line x1="40" y1="113" x2="40" y2="121" stroke="rgba(10,22,40,0.5)" stroke-width="1"/>
+      <line x1="386" y1="113" x2="386" y2="121" stroke="rgba(10,22,40,0.5)" stroke-width="1"/>
+      <line x1="736" y1="113" x2="736" y2="121" stroke="rgba(10,22,40,0.5)" stroke-width="1"/>
+      <line x1="1080" y1="113" x2="1080" y2="121" stroke="rgba(10,22,40,0.5)" stroke-width="1"/>
+
+      <!-- Day labels -->
+      <text x="40" y="135" text-anchor="start" class="day-marker">DAY 0</text>
+      <text x="386" y="135" text-anchor="middle" class="day-marker">DAY 20</text>
+      <text x="736" y="135" text-anchor="middle" class="day-marker">DAY 40</text>
+      <text x="1080" y="135" text-anchor="end" class="day-marker">DAY 60</text>
+    </svg>
+  </div>
+
+  <div class="footer-strip" style="font-style: italic; text-transform: none; letter-spacing: 0;">
+    Same engine that produced 11 certs. Different stack.
+  </div>
+</section>
+
+<!-- =================== SLIDE 13 — Closing =================== -->
+<section class="slide closing">
+  <div class="accent-bar" style="margin: 0 auto 28px;"></div>
+  <h2>
+    Translating AI capability into enterprise outcomes.<br>
+    <span class="accent">That's the work I've been building toward.</span>
+  </h2>
+
+  <div style="margin: 36px 0 24px; display: flex; align-items: center; gap: 28px; justify-content: center;">
+    <img src="images/jazzlien-qr-code.png"
+         alt="QR code linking to jazzlien.com"
+         style="width: 140px; height: 140px; border-radius: 8px; border: 1px solid var(--line); background: #fff; padding: 6px;">
+    <div style="text-align: left;">
+      <div style="font-size: 11px; color: var(--faint); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px;">Scan to explore</div>
+      <div style="font-size: 17px; color: var(--fg); font-weight: 500; line-height: 1.3;">Projects, blog, and guides</div>
+      <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">jazzlien.com</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Jazz Lien<span class="sep">·</span>jazzlien.com
+  </div>
+</section>
+
+</div>
+</div>
+
+<script>
+(function () {
+  var slides = document.querySelectorAll('.slide');
+  var total = slides.length;
+  var current = 0;
+
+  var curNum = document.getElementById('curNum');
+  var totalNum = document.getElementById('totalNum');
+  var progressFill = document.getElementById('progressFill');
+  var hint = document.getElementById('hint');
+
+  totalNum.textContent = total;
+
+  function render() {
+    for (var i = 0; i < total; i++) {
+      slides[i].classList.remove('active', 'prev');
+      if (i === current) slides[i].classList.add('active');
+      else if (i < current) slides[i].classList.add('prev');
+    }
+    curNum.textContent = current + 1;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  function go(delta) {
+    var next = current + delta;
+    if (next < 0 || next >= total) return;
+    current = next;
+    render();
+    dismissHint();
+  }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= total) return;
+    current = idx;
+    render();
+    dismissHint();
+  }
+
+  function dismissHint() {
+    if (hint && !hint.classList.contains('gone')) {
+      hint.classList.add('gone');
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    } else if (e.key === 'Escape') {
+      goTo(0);
+    } else if (/^[0-9]$/.test(e.key)) {
+      var n = parseInt(e.key, 10);
+      if (n === 0) goTo(9);
+      else goTo(n - 1);
+    }
+  });
+
+  function isMobile() {
+    return window.matchMedia('(max-width: 900px)').matches;
+  }
+
+  // click anywhere advances (except buttons / links) — desktop only
+  document.addEventListener('click', function (e) {
+    if (isMobile()) return;
+    if (e.target.closest('a, button')) return;
+    go(1);
+  });
+
+  // auto-dismiss hint after 6s
+  setTimeout(dismissHint, 6000);
+
+  // scale slides to viewport while preserving 16:9 — desktop only
+  function scale() {
+    if (isMobile()) {
+      document.documentElement.style.setProperty('--scale', 1);
+      return;
+    }
+    var wRatio = window.innerWidth / 1280;
+    var hRatio = window.innerHeight / 720;
+    var s = Math.min(wRatio, hRatio);
+    document.documentElement.style.setProperty('--scale', s);
+  }
+  window.addEventListener('resize', scale);
+  scale();
+
+  render();
+})();
+</script>
+
+</body>
+</html>
