@@ -2,3 +2,6 @@
 Thumbs.db
 *.swp
 *~
+
+# Interview-prep bundles (kept local only)
+/decks/microsoft-aibp/
