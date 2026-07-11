@@ -5,3 +5,6 @@ Thumbs.db
 
 # Interview-prep bundles (kept local only)
 /decks/microsoft-aibp/
+
+# Client decks (kept local only)
+/decks/adlink-ai-automation/
